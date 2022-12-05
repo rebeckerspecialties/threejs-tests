@@ -1,0 +1,10 @@
+# ignore folders
+public
+dist
+note_modules
+src/assets
+
+# ignore files
+package-lock.json
+tsconfig.node.json
+
