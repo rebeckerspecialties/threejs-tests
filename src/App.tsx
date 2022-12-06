@@ -1,29 +1,73 @@
+import { Sky, Text } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { Controllers, Hands, Interactive, VRButton, XR } from '@react-three/xr';
 import { useState } from 'react';
-import reactLogo from './assets/react.svg';
 import './App.css';
 
-function App() {
-	const [count, setCount] = useState(0);
+function Floor() {
+	return (
+		<mesh rotation={[-Math.PI / 2, 0, 0]}>
+			<planeGeometry args={[40, 40]} />
+			<meshStandardMaterial color="#666" />
+		</mesh>
+	);
+}
+
+function Box({ color, size, scale, children, ...rest }: any) {
+	return (
+		<mesh scale={scale} {...rest}>
+			<boxGeometry args={size} />
+			<meshPhongMaterial color={color} />
+			{children}
+		</mesh>
+	);
+}
+
+function Button(props: any) {
+	const [hover, setHover] = useState(false);
+	const [color, setColor] = useState(0x123456);
+
+	const onSelect = () => {
+		setColor((Math.random() * 0xffffff) | 0);
+	};
 
 	return (
-		<div className="App">
-			<div>
-				<a href="https://vitejs.dev" target="_blank">
-					<img src="/vite.svg" className="logo" alt="Vite logo" />
-				</a>
-				<a href="https://reactjs.org" target="_blank">
-					<img src={reactLogo} className="logo react" alt="React logo" />
-				</a>
-			</div>
-			<h1>Vite + React</h1>
-			<div className="card">
-				<button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
-			</div>
-			<p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-		</div>
+		<Interactive onSelect={onSelect} onHover={() => setHover(true)} onBlur={() => setHover(false)}>
+			<Box
+				color={color}
+				scale={hover ? [1.5, 1.5, 1.5] : [1, 1, 1]}
+				size={[0.4, 0.1, 0.1]}
+				{...props}
+			>
+				<Text
+					position={[0, 0, 0.06]}
+					fontSize={0.05}
+					color="#000"
+					anchorX="center"
+					anchorY="middle"
+				>
+					Hello World!
+ 				</Text>
+			</Box>
+		</Interactive>
+	);
+}
+
+function App() {
+	return (
+		<>
+			<VRButton />
+			<Canvas>
+				<XR>
+					<Sky sunPosition={[0, 1, 0]} />
+					<Floor />
+					<ambientLight />
+					<pointLight position={[10, 10, 10]} />
+					<Controllers />
+					<Button position={[0, 0.8, -1]} />
+				</XR>
+			</Canvas>
+		</>
 	);
 }
 
