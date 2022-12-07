@@ -1,59 +1,20 @@
-import { Sky, Text } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Controllers, Hands, Interactive, VRButton, XR } from '@react-three/xr';
-import { useState } from 'react';
+import React from 'react';
+import { Sky } from '@react-three/drei';
+import { Canvas, Vector3 } from '@react-three/fiber';
+import { Controllers, VRButton, XR } from '@react-three/xr';
 import './App.css';
+import { Button, Floor } from './drawables';
 
-function Floor() {
-	return (
-		<mesh rotation={[-Math.PI / 2, 0, 0]}>
-			<planeGeometry args={[40, 40]} />
-			<meshStandardMaterial color="#666" />
-		</mesh>
-	);
-}
+const App: React.FC = () => {
+	const cubePositions = [];
 
-function Box({ color, size, scale, children, ...rest }: any) {
-	return (
-		<mesh scale={scale} {...rest}>
-			<boxGeometry args={size} />
-			<meshPhongMaterial color={color} />
-			{children}
-		</mesh>
-	);
-}
-
-function Button(props: any) {
-	const [hover, setHover] = useState(false);
-	const [color, setColor] = useState(0x123456);
-
-	const onSelect = () => {
-		setColor((Math.random() * 0xffffff) | 0);
-	};
-
-	return (
-		<Interactive onSelect={onSelect} onHover={() => setHover(true)} onBlur={() => setHover(false)}>
-			<Box
-				color={color}
-				scale={hover ? [1.5, 1.5, 1.5] : [1, 1, 1]}
-				size={[0.4, 0.1, 0.1]}
-				{...props}
-			>
-				<Text
-					position={[0, 0, 0.06]}
-					fontSize={0.05}
-					color="#000"
-					anchorX="center"
-					anchorY="middle"
-				>
-					Hello World!
- 				</Text>
-			</Box>
-		</Interactive>
-	);
-}
-
-function App() {
+	for (let i = -1; i <= 1; i = i + 0.5) {
+		for (let j = 0.5; j <= 2.5; j = j + 0.5) {
+			for (let k = -1; k >= -3; k = k - 0.5) {
+				cubePositions.push([i, j, k]);
+			}
+		}
+	}
 	return (
 		<>
 			<VRButton />
@@ -64,11 +25,15 @@ function App() {
 					<ambientLight />
 					<pointLight position={[10, 10, 10]} />
 					<Controllers />
-					<Button position={[0, 0.8, -1]} />
+					{cubePositions.map((position, idx) => (
+						<Button key={idx} position={position as Vector3} size={[0.3, 0.3, 0.3]}>
+							{`Cube${idx}`}
+						</Button>
+					))}
 				</XR>
 			</Canvas>
 		</>
 	);
-}
+};
 
 export default App;
