@@ -1,7 +1,9 @@
 import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Box } from '../Box/Box';
+import { formatBytes } from '../utils/formats';
+import useGetMemoryStats from '../utils/ImmersiveStats/hooks/useGetMemoryStats';
 
 export const ImmersiveStats: React.FC = () => {
 	// ref in Text is unknown :( - forcing the prop I need
@@ -9,6 +11,9 @@ export const ImmersiveStats: React.FC = () => {
 	const frameCount = useRef(0);
 	const lastFPS = useRef(0);
 	const lastFPSUpdate = useRef(0);
+	const lastMemoryUpdate = useRef<{ text?: string; color?: string }>({ text: '' });
+
+	const { measuredMemory, loading } = useGetMemoryStats();
 
 	useFrame(() => {
 		const now = performance.now();
@@ -17,7 +22,7 @@ export const ImmersiveStats: React.FC = () => {
 		if (now >= lastFPSUpdate.current + 1000) {
 			const fps = Math.round(frameCount.current / ((now - lastFPSUpdate.current) / 1000));
 			if (lastFPS.current !== fps) {
-				fpsText.current.text = `${fps} FPS`;
+				fpsText.current.text = `FPS: ${fps}`;
 				lastFPS.current = fps;
 			}
 			lastFPSUpdate.current = now;
@@ -25,10 +30,28 @@ export const ImmersiveStats: React.FC = () => {
 		}
 	});
 
+	useEffect(() => {
+		if (loading) {
+			lastMemoryUpdate.current.text = 'Memory usage: calculating...';
+			return;
+		}
+		
+		if (!measuredMemory) { 
+			lastMemoryUpdate.current.text = 'Memory usage: not supported';
+			return;
+		}
+
+		lastMemoryUpdate.current.text = `Memory usage ${
+			measuredMemory?.legacyResult ? '(legacy measurement)' : ''
+		}: ${formatBytes(measuredMemory?.result || 0)}`;
+
+		lastMemoryUpdate.current.color = measuredMemory?.legacyResult ? '#f00' : '#000';
+	}, [measuredMemory, loading]);
+
 	return (
-		<Box position={[-0.2, 0.2, -1]} size={[0.5, 0.2, 0.01]} color="#ccc">
+		<Box position={[-0.2, 0.2, -1]} size={[0.6, 0.2, 0.01]} color="#ccc">
 			<Text
-				position={[-0.23, 0.07, 0.01]}
+				position={[-0.28, 0.07, 0.01]}
 				fontSize={0.03}
 				color="#000"
 				anchorX="left"
@@ -38,13 +61,23 @@ export const ImmersiveStats: React.FC = () => {
 			</Text>
 			<Text
 				ref={fpsText}
-				position={[-0.2, 0.02, 0.01]}
-				fontSize={0.03}
+				position={[-0.26, 0.02, 0.01]}
+				fontSize={0.025}
 				color="#000"
 				anchorX="left"
 				anchorY="middle"
 			>
 				{''}
+			</Text>
+			<Text
+				ref={lastMemoryUpdate}
+				position={[-0.26, -0.02, 0.01]}
+				fontSize={0.025}
+				color="#000"
+				anchorX="left"
+				anchorY="middle"
+			>
+				Memory usage: calculating...
 			</Text>
 		</Box>
 	);
