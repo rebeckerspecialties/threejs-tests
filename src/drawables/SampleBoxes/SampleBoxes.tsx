@@ -1,8 +1,7 @@
 import { ThreeEvent, useFrame } from '@react-three/fiber';
 import React, { useMemo, useRef, useState } from 'react';
 import { InstancedMesh, Object3D } from 'three';
-import { perfTestCubeGeometry } from '../utils/geometries';
-import { perfTestPhongMaterial } from '../utils/materials';
+import { perfTestCubeGeometry } from '@/drawables/utils/geometries';
 
 interface SampleBoxesProps {
 	count?: number;
@@ -14,7 +13,7 @@ function getRandomPosition(): number {
 }
 
 function mountPositions(count: number): Array<[number, number, number]> {
-	let result: Array<[number, number, number]> = [];
+	const result: Array<[number, number, number]> = [];
 	for (let i = 0; i < count; i++) {
 		result.push([getRandomPosition(), getRandomPosition(), getRandomPosition()]);
 	}
@@ -27,7 +26,7 @@ export const SampleBoxes: React.FC<SampleBoxesProps> = ({
 }) => {
 	const [hovered, setHovered] = useState<number>();
 	const meshRef = useRef<InstancedMesh>(null);
-	const objectPositions = useMemo(() => mountPositions(count), []);
+	const objectPositions = useMemo(() => mountPositions(count), [count]);
 
 	useFrame(() => {
 		// Set positions
@@ -48,7 +47,7 @@ export const SampleBoxes: React.FC<SampleBoxesProps> = ({
 			meshRef?.current?.setMatrixAt(i, object3D.matrix);
 		}
 		// Update the instance
-		if (meshRef?.current?.instanceMatrix) {
+		if (meshRef?.current?.instanceMatrix != null) {
 			meshRef.current.instanceMatrix.needsUpdate = true;
 		}
 	});

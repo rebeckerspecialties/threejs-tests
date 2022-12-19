@@ -1,17 +1,26 @@
 import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import React, { useEffect, useRef } from 'react';
-import { Box } from '../Box/Box';
-import { formatBytes } from '../utils/formats';
-import useGetMemoryStats from '../utils/ImmersiveStats/hooks/useGetMemoryStats';
+import { Box } from '@/drawables/Box/Box';
+import { formatBytes } from '@/drawables/utils/formats';
+import useGetMemoryStats from '@/drawables/utils/ImmersiveStats/hooks/useGetMemoryStats';
 
 export const ImmersiveStats: React.FC = () => {
 	// ref in Text is unknown :( - forcing the prop I need
-	const fpsText = useRef<{ text?: string }>({ text: ' FPS' });
+	const fpsText = useRef<{
+		text?: string;
+	}>({
+		text: ' FPS',
+	});
 	const frameCount = useRef(0);
 	const lastFPS = useRef(0);
 	const lastFPSUpdate = useRef(0);
-	const lastMemoryUpdate = useRef<{ text?: string; color?: string }>({ text: '' });
+	const lastMemoryUpdate = useRef<{
+		text?: string;
+		color?: string;
+	}>({
+		text: '',
+	});
 
 	const { measuredMemory, loading } = useGetMemoryStats();
 
@@ -31,22 +40,22 @@ export const ImmersiveStats: React.FC = () => {
 	});
 
 	useEffect(() => {
-		if (loading) {
+		if (loading ?? false) {
 			lastMemoryUpdate.current.text = 'Memory usage: calculating...';
 			return;
 		}
-		
-		if (!measuredMemory) { 
+
+		if (measuredMemory == null) {
 			lastMemoryUpdate.current.text = 'Memory usage: not supported';
 			return;
 		}
 
 		lastMemoryUpdate.current.text = `Memory usage ${
 			measuredMemory?.legacyResult ? '(legacy measurement)' : ''
-		}: ${formatBytes(measuredMemory?.result || 0)}`;
+		}: ${formatBytes(measuredMemory?.result ?? 0)}`;
 
 		lastMemoryUpdate.current.color = measuredMemory?.legacyResult ? '#f00' : '#000';
-	}, [measuredMemory, loading]);
+	}, [loading, measuredMemory]);
 
 	return (
 		<Box position={[-0.2, 0.2, -1]} size={[0.6, 0.2, 0.01]} color="#ccc">

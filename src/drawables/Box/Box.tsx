@@ -9,7 +9,7 @@ export const Box: React.FC<BoxProps> = ({ position, scale, size, color, children
 	const meshRef = useRef<Mesh>(null);
 
 	useFrame(({ clock }) => {
-		if (rotating && meshRef?.current?.rotation) {
+		if ((rotating ?? false) && meshRef?.current?.rotation != null) {
 			meshRef.current.rotation.y = clock.getElapsedTime();
 		}
 	});
