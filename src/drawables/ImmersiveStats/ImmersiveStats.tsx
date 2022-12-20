@@ -1,9 +1,9 @@
-import { Text } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
-import React, { useEffect, useRef } from 'react';
 import { Box } from '@/drawables/Box/Box';
 import { formatBytes } from '@/drawables/utils/formats';
 import useGetMemoryStats from '@/drawables/utils/ImmersiveStats/hooks/useGetMemoryStats';
+import { Text } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import React, { useEffect, useRef } from 'react';
 
 export const ImmersiveStats: React.FC = () => {
 	// ref in Text is unknown :( - forcing the prop I need
@@ -58,7 +58,7 @@ export const ImmersiveStats: React.FC = () => {
 	}, [loading, measuredMemory]);
 
 	return (
-		<Box position={[-0.2, 0.2, -1]} size={[0.6, 0.2, 0.01]} color="#ccc">
+		<Box position={[-0.1, 0.2, -1]} size={[0.5, 0.2, 0.01]} color="#ccc">
 			<Text
 				position={[-0.28, 0.07, 0.01]}
 				fontSize={0.03}

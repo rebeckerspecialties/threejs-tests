@@ -13,7 +13,7 @@ module.exports = {
 		'plugin:react-hooks/recommended',
 		'plugin:import/recommended',
 	],
-	ignorePatterns: ['vite.config.ts', 'node_modules/', '.yarn/'],
+	ignorePatterns: ['vite.config.ts', 'node_modules/', '.yarn/', 'dist/'],
 	overrides: [],
 	parserOptions: {
 		ecmaVersion: 'latest',
