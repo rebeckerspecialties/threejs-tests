@@ -5,10 +5,11 @@ import React from 'react';
 import './App.css';
 import { ImmersiveStats } from './drawables';
 import { ExampleInstancedBlocks } from './examples';
+import { TextSelectionProvider } from './providers';
 
 const App: React.FC = () => {
 	return (
-		<>
+		<TextSelectionProvider>
 			<VRButton />
 			<Canvas style={{ backgroundColor: 'gray' }}>
 				<XR>
@@ -23,7 +24,7 @@ const App: React.FC = () => {
 					</PerspectiveCamera>
 				</XR>
 			</Canvas>
-		</>
+		</TextSelectionProvider>
 	);
 };
 

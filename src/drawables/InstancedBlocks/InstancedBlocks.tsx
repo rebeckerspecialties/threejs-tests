@@ -1,7 +1,8 @@
-import { Text } from '@react-three/drei';
-import React, { createRef, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { InstancedMesh, Object3D } from 'three';
+import { HighlightedText } from '../HighlightedText/HighlightedText';
 import { defaultBoxGeometry, defaultBoxSize } from '../utils/geometries';
+
 export interface Block {
 	position?: {
 		x: number;
@@ -24,10 +25,6 @@ interface InstancedBlocksProps {
 
 export const InstancedBlocks: React.FC<InstancedBlocksProps> = ({ blocks }) => {
 	const meshRef = useRef<InstancedMesh>(null);
-	const textRefs = useRef<any[]>([]); // forcing any here - Text from @react-three/drei doesn't have type in its ref
-
-	// each block may have a text, each text has a ref
-	blocks?.forEach((_block) => textRefs.current.push(createRef()));
 
 	useEffect(() => {
 		if (meshRef.current === null) {
@@ -41,7 +38,6 @@ export const InstancedBlocks: React.FC<InstancedBlocksProps> = ({ blocks }) => {
 				position = { x: 0, y: 0, z: 0 },
 				scale = { width: 1, height: 1, depth: 1 },
 				rotationY = 0,
-				text = '',
 			} = blocks[idx];
 
 			// setting blocks
@@ -54,15 +50,6 @@ export const InstancedBlocks: React.FC<InstancedBlocksProps> = ({ blocks }) => {
 
 			object3D.updateMatrix();
 			meshRef.current.setMatrixAt(idx, object3D.matrix);
-
-			// setting text
-			// only front face for now
-			if (text?.length > 0) {
-				const textFace = textRefs.current[idx].current;
-				textFace.position.set(position.x, position.y, position.z);
-				textFace.geometry.translate(0, 0, defaultBoxSize / 2 + 0.001);
-				textFace.rotateY(rotationY);
-			}
 		}
 		// update the instance
 		meshRef.current.instanceMatrix.needsUpdate = true;
@@ -74,16 +61,15 @@ export const InstancedBlocks: React.FC<InstancedBlocksProps> = ({ blocks }) => {
 				<meshPhongMaterial color="#708090" />
 			</instancedMesh>
 			{blocks.map(
-				({ text = '' }, blockIdx) =>
+				({ text = '', position = { x: 0, y: 0, z: 0 }, rotationY = 0 }, blockIdx) =>
 					text.length > 0 && (
-						<Text
-							key={`b-${blockIdx}`}
-							ref={textRefs.current[blockIdx]}
-							color="#000"
-							fontSize={0.05}
-						>
-							{text}
-						</Text>
+						<HighlightedText
+							key={`t-${blockIdx}`}
+							text={text}
+							position={position}
+							rotationY={rotationY}
+							translate={{ x: 0, y: 0, z: defaultBoxSize / 2 + 0.011 }}
+						/>
 					),
 			)}
 		</>
