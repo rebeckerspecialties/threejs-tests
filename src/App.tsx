@@ -4,7 +4,7 @@ import { Controllers, VRButton, XR } from '@react-three/xr';
 import React from 'react';
 import './App.css';
 import { ImmersiveStats } from './drawables';
-import { ExampleInstancedBlocks } from './examples';
+import { Examples } from './examples';
 import { TextSelectionProvider } from './providers';
 
 const App: React.FC = () => {
@@ -17,7 +17,7 @@ const App: React.FC = () => {
 					<pointLight position={[10, 10, 10]} />
 					<Controllers />
 
-					<ExampleInstancedBlocks />
+					<Examples />
 
 					<PerspectiveCamera makeDefault>
 						<ImmersiveStats />

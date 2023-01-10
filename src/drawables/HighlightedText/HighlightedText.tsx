@@ -65,6 +65,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 		if (
 			!defined(textRef.current) ||
 			!defined(meshRef.current) ||
+			!defined(getSelectionRects) ||
 			selectionIndexes.length === 0 ||
 			clock.elapsedTime < tickRef.current.lastTick + TICK_SEC
 		) {

@@ -60,7 +60,7 @@ export const ImmersiveStats: React.FC = () => {
 	return (
 		<Box position={[-0.1, 0.2, -1]} size={[0.5, 0.2, 0.01]} color="#ccc">
 			<Text
-				position={[-0.28, 0.07, 0.01]}
+				position={[-0.23, 0.07, 0.01]}
 				fontSize={0.03}
 				color="#000"
 				anchorX="left"
@@ -70,7 +70,7 @@ export const ImmersiveStats: React.FC = () => {
 			</Text>
 			<Text
 				ref={fpsText}
-				position={[-0.26, 0.02, 0.01]}
+				position={[-0.21, 0.02, 0.01]}
 				fontSize={0.025}
 				color="#000"
 				anchorX="left"
@@ -80,7 +80,7 @@ export const ImmersiveStats: React.FC = () => {
 			</Text>
 			<Text
 				ref={lastMemoryUpdate}
-				position={[-0.26, -0.02, 0.01]}
+				position={[-0.21, -0.02, 0.01]}
 				fontSize={0.025}
 				color="#000"
 				anchorX="left"

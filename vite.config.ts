@@ -30,4 +30,11 @@ export default defineConfig({
 	},
 	// TODO: We have to make sure that payments do not get affected by this. (Cross-Origin Isolation)
 	plugins: [react(), crossOriginIsolation(), basicSsl()],
+
+	// This project currently uses a forked version of ThreeJS (dev branch + unmerged PRs), to test & debug locally:
+	//   - clone https://github.com/rebeckerspecialties/three.js
+	//   - install the local package in this project (`npm i <path_cloned_threejs>`)
+	//   - enable the flag below
+	// Enable this to test ThreeJS locally.
+	optimizeDeps: { include: ['three'] },
 });

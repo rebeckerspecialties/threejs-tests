@@ -3,11 +3,11 @@
 		"target": "ESNext",
 		"useDefineForClassFields": true,
 		"lib": ["DOM", "DOM.Iterable", "ESNext"],
-		"allowJs": false,
+		"allowJs": true, // Enabled JS because of forked `three` package
 		"skipLibCheck": true,
 		"esModuleInterop": false,
 		"allowSyntheticDefaultImports": true,
-		"strict": true,
+		"strict": false, // Disabled strict because of forked `three` package
 		"forceConsistentCasingInFileNames": true,
 		"module": "ESNext",
 		"moduleResolution": "Node",
@@ -18,7 +18,8 @@
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"]
-		}
+		},
+		"strictNullChecks": true,
 	},
 	"include": ["src"],
 	"references": [{ "path": "./tsconfig.node.json" }]

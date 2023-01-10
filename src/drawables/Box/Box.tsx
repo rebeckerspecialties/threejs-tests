@@ -2,18 +2,13 @@ import { BoxGeometryProps, MeshPhongMaterialProps, MeshProps, useFrame } from '@
 import React, { useRef } from 'react';
 import { Mesh } from 'three';
 
-type BoxProps = MeshProps &
-	Pick<MeshPhongMaterialProps, 'color'> & { size: BoxGeometryProps['args']; rotating?: boolean };
+type Props = MeshProps &
+	Pick<MeshPhongMaterialProps, 'color'> & {
+		size: BoxGeometryProps['args'];
+		rotating?: boolean;
+	};
 
-export const Box: React.FC<BoxProps> = ({
-	position,
-	scale,
-	size,
-	color,
-	children,
-	rotating,
-	...props
-}) => {
+export const Box: React.FC<Props> = ({ size, color, rotating, children, ...meshProps }) => {
 	const meshRef = useRef<Mesh>(null);
 
 	useFrame(({ clock }) => {
@@ -23,7 +18,7 @@ export const Box: React.FC<BoxProps> = ({
 	});
 
 	return (
-		<mesh ref={meshRef} scale={scale} position={position} {...props}>
+		<mesh ref={meshRef} {...meshProps}>
 			<boxGeometry args={size} />
 			<meshPhongMaterial color={color} />
 			{children}
