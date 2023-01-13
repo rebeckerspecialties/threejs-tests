@@ -5,6 +5,7 @@ import { Floor } from './Floor/Floor';
 import { HighlightedText } from './HighlightedText/HighlightedText';
 import { ImmersiveStats } from './ImmersiveStats/ImmersiveStats';
 import { InstancedBlocks } from './InstancedBlocks/InstancedBlocks';
+import { PlayerNavigation } from './PlayerNavigation/PlayerNavigation';
 import { SampleBoxes } from './SampleBoxes/SampleBoxes';
 
 export {
@@ -15,5 +16,6 @@ export {
 	HighlightedText,
 	ImmersiveStats,
 	InstancedBlocks,
+	PlayerNavigation,
 	SampleBoxes,
 };

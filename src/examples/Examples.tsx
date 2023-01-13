@@ -17,7 +17,7 @@ export const Examples: React.FC = () => {
 		<>
 			<Button
 				size={[1, 0.5, 0.1]}
-				position={[-2, -0.5, -3]}
+				position={[-2, 0.5, -2]}
 				color={0xffffff}
 				onClick={() => toggleExample('InstancedBlocks')}
 				onSelect={() => toggleExample('InstancedBlocks')}
@@ -26,7 +26,7 @@ export const Examples: React.FC = () => {
 			</Button>
 			<Button
 				size={[1, 0.5, 0.1]}
-				position={[-0.5, -0.5, -3]}
+				position={[-0.5, 0.5, -2]}
 				color={0xffffff}
 				onClick={() => toggleExample('BatchTexts')}
 				onSelect={() => toggleExample('BatchTexts')}
@@ -35,7 +35,7 @@ export const Examples: React.FC = () => {
 			</Button>
 			<Button
 				size={[1, 0.5, 0.1]}
-				position={[1, -0.5, -3]}
+				position={[1, 0.5, -2]}
 				color={0xffffff}
 				onClick={() => toggleExample('HighlightedText')}
 				onSelect={() => toggleExample('HighlightedText')}

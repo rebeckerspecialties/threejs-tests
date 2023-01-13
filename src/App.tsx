@@ -1,11 +1,11 @@
+import { Floor, ImmersiveStats, PlayerNavigation } from '@/drawables';
+import { Examples } from '@/examples';
+import { TextSelectionProvider } from '@/providers';
 import { PerspectiveCamera } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Controllers, VRButton, XR } from '@react-three/xr';
 import React from 'react';
 import './App.css';
-import { ImmersiveStats } from './drawables';
-import { Examples } from './examples';
-import { TextSelectionProvider } from './providers';
 
 const App: React.FC = () => {
 	return (
@@ -15,13 +15,16 @@ const App: React.FC = () => {
 				<XR>
 					<ambientLight />
 					<pointLight position={[10, 10, 10]} />
+					<Floor />
 					<Controllers />
 
 					<Examples />
 
-					<PerspectiveCamera makeDefault>
+					<PerspectiveCamera makeDefault position={[0, 1, 0]}>
 						<ImmersiveStats />
 					</PerspectiveCamera>
+
+					<PlayerNavigation />
 				</XR>
 			</Canvas>
 		</TextSelectionProvider>
