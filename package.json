@@ -19,7 +19,7 @@
 		"@react-three/xr": "^5.1.0",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"three": "git+ssh://git@github.com:rebeckerspecialties/three.js",
+		"three": "git+ssh://git@github.com:rebeckerspecialties/three.js#dev",
 		"troika-three-text": "^0.47.1"
 	},
 	"devDependencies": {
