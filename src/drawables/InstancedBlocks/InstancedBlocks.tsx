@@ -1,7 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { InstancedMesh, Object3D } from 'three';
+import { useTextSelectionContext } from '@/providers';
+import React, { useCallback, useLayoutEffect, useRef } from 'react';
+import { Color, InstancedMesh, Object3D } from 'three';
 import { HighlightedText } from '../HighlightedText/HighlightedText';
+import { defaultBlockColor, findMatchBlockColor } from '../utils/colors';
 import { defaultBoxGeometry, defaultBoxSize } from '../utils/geometries';
+import { defaultBlockMaterial } from '../utils/materials';
+import { defined } from '../utils/utils';
 
 export interface Block {
 	position?: {
@@ -23,10 +27,13 @@ interface InstancedBlocksProps {
 	blocks: Block[];
 }
 
+const SCALE_MOD = 0.1;
+
 export const InstancedBlocks: React.FC<InstancedBlocksProps> = ({ blocks }) => {
+	const { selectedText } = useTextSelectionContext();
 	const meshRef = useRef<InstancedMesh>(null);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (meshRef.current === null) {
 			return;
 		}
@@ -38,37 +45,64 @@ export const InstancedBlocks: React.FC<InstancedBlocksProps> = ({ blocks }) => {
 				position = { x: 0, y: 0, z: 0 },
 				scale = { width: 1, height: 1, depth: 1 },
 				rotationY = 0,
+				text = '',
 			} = blocks[idx];
+			let scaleMod = 0;
+			let blockColor: Color = defaultBlockColor;
+
+			if (selectedText.length > 0 && text.includes(selectedText)) {
+				scaleMod = SCALE_MOD;
+				blockColor = findMatchBlockColor;
+			}
 
 			// setting blocks
 			object3D.position.set(position.x, position.y, position.z);
-			object3D.scale.set(scale.width, scale.height, scale.depth);
+			object3D.scale.set(scale.width + scaleMod, scale.height + scaleMod, scale.depth + scaleMod);
 
 			// object3D keeps last rotation, need to revert and apply current
 			object3D.rotateY(rotationY - lastBlockRotation);
 			lastBlockRotation = rotationY;
 
 			object3D.updateMatrix();
+			meshRef.current.setColorAt(idx, blockColor);
 			meshRef.current.setMatrixAt(idx, object3D.matrix);
 		}
 		// update the instance
 		meshRef.current.instanceMatrix.needsUpdate = true;
-	}, [blocks]);
+		if (defined(meshRef.current.instanceColor)) {
+			meshRef.current.instanceColor.needsUpdate = true;
+		}
+	}, [blocks, selectedText]);
+
+	const getZTranslation = useCallback(
+		(
+			text: string = '',
+			scale: { width: number; height: number; depth: number } = { width: 1, height: 1, depth: 1 },
+		) => {
+			if (selectedText.length > 0 && text.includes(selectedText)) {
+				return (defaultBoxSize * (scale.depth + SCALE_MOD)) / 2 + 0.011;
+			} else {
+				return (defaultBoxSize * scale.depth) / 2 + 0.011;
+			}
+		},
+		[selectedText],
+	);
 
 	return (
 		<>
-			<instancedMesh ref={meshRef} args={[defaultBoxGeometry, undefined, blocks.length]}>
-				<meshPhongMaterial color="#708090" />
-			</instancedMesh>
+			<instancedMesh
+				ref={meshRef}
+				args={[defaultBoxGeometry, defaultBlockMaterial, blocks.length]}
+			/>
 			{blocks.map(
-				({ text = '', position = { x: 0, y: 0, z: 0 }, rotationY = 0 }, blockIdx) =>
+				({ text = '', position = { x: 0, y: 0, z: 0 }, rotationY = 0, scale }, blockIdx) =>
 					text.length > 0 && (
 						<HighlightedText
 							key={`t-${blockIdx}`}
 							text={text}
 							position={position}
 							rotationY={rotationY}
-							translate={{ x: 0, y: 0, z: defaultBoxSize / 2 + 0.011 }}
+							translate={{ x: 0, y: 0, z: getZTranslation(text, scale) }}
 						/>
 					),
 			)}

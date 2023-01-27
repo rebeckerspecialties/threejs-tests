@@ -12,6 +12,7 @@ module.exports = {
 		'prettier',
 		'plugin:react-hooks/recommended',
 		'plugin:import/recommended',
+		'plugin:react/jsx-runtime',
 	],
 	ignorePatterns: ['vite.config.ts', 'node_modules/', '.yarn/', 'dist/'],
 	overrides: [],
@@ -48,6 +49,7 @@ module.exports = {
 			},
 		],
 		'@typescript-eslint/explicit-function-return-type': 'off',
+		'@typescript-eslint/prefer-ts-expect-error': 'off',
 	},
 	settings: {
 		react: {

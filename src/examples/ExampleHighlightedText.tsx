@@ -47,10 +47,10 @@ export const ExampleHighlightedText: React.FC = () => {
 			<Button
 				size={[0.4, 0.3, 0.15]}
 				position={[-1, 0, -5]}
-				onClick={() => setSelectedText('do')}
-				onSelect={() => setSelectedText('do')}
+				onClick={() => setSelectedText('eos')}
+				onSelect={() => setSelectedText('eos')}
 			>
-				select &quot;do&quot;
+				select &quot;eos&quot;
 			</Button>
 		</>
 	);

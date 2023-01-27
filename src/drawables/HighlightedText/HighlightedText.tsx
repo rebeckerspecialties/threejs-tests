@@ -8,8 +8,6 @@ import { defaultThemeColor } from '../utils/colors';
 import { textHighlightBoxGeometry } from '../utils/geometries';
 import { defined } from '../utils/utils';
 
-const TICK_SEC = 1;
-
 interface HighlightedTextProps {
 	text: string;
 	position: { x: number; y: number; z: number };
@@ -31,7 +29,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 	const groupRef = useRef<Group>(null);
 	const textRef = useRef<typeof TroikaText>(null);
 	const meshRef = useRef<InstancedMesh>(null);
-	const tickRef = useRef({ lastTick: 0, lastSelectedText: '' });
+	const tickRef = useRef({ lastSelectedText: '' });
 	const object3D = new Object3D();
 
 	const selectionIndexes: number[] = useMemo(() => {
@@ -61,42 +59,38 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 		groupRef.current.rotation.y = rotationY;
 	}, [position, translate, rotationY]);
 
-	useFrame(({ clock }) => {
+	useFrame(() => {
 		if (
 			!defined(textRef.current) ||
-			!defined(meshRef.current) ||
 			!defined(getSelectionRects) ||
-			selectionIndexes.length === 0 ||
-			clock.elapsedTime < tickRef.current.lastTick + TICK_SEC
+			tickRef.current.lastSelectedText === selectedText
 		) {
 			return;
 		}
 
-		tickRef.current.lastTick = clock.elapsedTime;
+		for (let i = 0; i < selectionIndexes.length; i++) {
+			// considering word selection (line doesn't break in Text), so we only need first occurrence
+			const [{ left, right, top, bottom }]: [
+				{ left: number; right: number; top: number; bottom: number },
+			] = getSelectionRects(
+				textRef.current.textRenderInfo,
+				selectionIndexes[i],
+				selectionIndexes[i] + selectedText.length,
+			);
 
-		if (tickRef.current.lastSelectedText !== selectedText) {
-			for (let i = 0; i < selectionIndexes.length; i++) {
-				// considering word selection (line doesn't break in Text), so we only need first occurrence
-				const [{ left, right, top, bottom }]: [
-					{ left: number; right: number; top: number; bottom: number },
-				] = getSelectionRects(
-					textRef.current.textRenderInfo,
-					selectionIndexes[i],
-					selectionIndexes[i] + selectedText.length,
-				);
-
-				const width = right - left;
-				const height = top - bottom;
-				const posX = width / 2 + left;
-				const posY = height / 2 + bottom;
-				object3D.position.set(posX, posY, 0.0005); // adjust z position closer to text
-				object3D.scale.set(width * 1000, height * 1000, 1000); // 1000 factor since geometry starts at 0.001
-				object3D.updateMatrix();
-				meshRef.current.setMatrixAt(i, object3D.matrix);
-			}
-			meshRef.current.instanceMatrix.needsUpdate = true;
-			tickRef.current.lastSelectedText = selectedText;
+			const width = right - left;
+			const height = top - bottom;
+			const posX = width / 2 + left;
+			const posY = height / 2 + bottom;
+			object3D.position.set(posX, posY, 0.0005); // adjust z position closer to text
+			object3D.scale.set(width * 1000, height * 1000, 1000); // 1000 factor since geometry starts at 0.001
+			object3D.updateMatrix();
+			meshRef.current?.setMatrixAt(i, object3D.matrix);
 		}
+		if (defined(meshRef.current)) {
+			meshRef.current.instanceMatrix.needsUpdate = true;
+		}
+		tickRef.current.lastSelectedText = selectedText;
 	});
 
 	return (

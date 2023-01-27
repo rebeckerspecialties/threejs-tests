@@ -1,10 +1,19 @@
+import { Color } from 'three';
+
 // TODO: modify these colors to use a proper theme
 export const defaultThemeColor = {
 	editor: {
 		foreground: '#000000',
 		findMatchBackground: '#FF9900',
 	},
+	blocks: {
+		default: '#708090',
+		// default: '#007ACC',
+		findMatch: '#a5bcd4',
+	},
 };
+export const defaultBlockColor = new Color(defaultThemeColor.blocks.default);
+export const findMatchBlockColor = new Color(defaultThemeColor.blocks.findMatch);
 
 function padZero(str: string, len: number = 2) {
 	const zeros = new Array(len).join('0');

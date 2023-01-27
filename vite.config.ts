@@ -1,8 +1,8 @@
-import { resolve } from 'path';
-import { defineConfig } from 'vite';
-// import eslintPlugin from 'vite-plugin-eslint';
+/// <reference types="vitest" />
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
+import { defineConfig } from 'vite';
 
 // This enables cross-origin isolation for the app.
 // See https://web.dev/why-coop-coep/
@@ -23,11 +23,24 @@ const crossOriginIsolation = () => ({
 
 // https://vitejs.dev/config/
 export default defineConfig({
+	test: {
+		globals: false,
+		environment: 'jsdom',
+		deps: {
+			inline: ['opentype.js'],
+		},
+		setupFiles: [
+			'./src/test/setupFiles/setupGlobals.ts',
+			'./src/test/setupFiles/setupAndCleanupMocks.ts',
+		],
+	},
 	base: '',
 	resolve: {
 		alias: {
 			'@': resolve(__dirname, 'src'),
 		},
+		// resolve three-forcegraph as a module, not a file
+		mainFields: ['module'],
 	},
 	// TODO: We have to make sure that payments do not get affected by this. (Cross-Origin Isolation)
 	plugins: [react(), crossOriginIsolation(), basicSsl()],

@@ -9,7 +9,9 @@
 		"lint": "eslint .",
 		"preview": "vite preview",
 		"prettier:check": "prettier --check .",
-		"prettier:write": "prettier --write ."
+		"prettier:write": "prettier --write .",
+		"test": "vitest",
+		"coverage": "vitest run --coverage"
 	},
 	"dependencies": {
 		"@react-three/drei": "^9.46.2",
@@ -21,12 +23,14 @@
 		"troika-three-text": "^0.47.1"
 	},
 	"devDependencies": {
+		"@react-three/test-renderer": "^8.1.1",
 		"@types/react": "^18.0.24",
 		"@types/react-dom": "^18.0.8",
 		"@types/three": "^0.146.0",
 		"@typescript-eslint/eslint-plugin": "^5.46.0",
 		"@vitejs/plugin-basic-ssl": "^1.0.1",
 		"@vitejs/plugin-react": "^2.2.0",
+		"canvas": "^2.11.0",
 		"danger": "^11.2.0",
 		"eslint": "^8.29.0",
 		"eslint-config-prettier": "^8.5.0",
@@ -38,9 +42,11 @@
 		"eslint-plugin-promise": "^6.1.1",
 		"eslint-plugin-react": "^7.31.11",
 		"eslint-plugin-react-hooks": "^4.6.0",
+		"jsdom": "^21.1.0",
 		"prettier": "^2.8.1",
 		"typescript": "^4.9.4",
-		"vite": "^3.2.3"
+		"vite": "^3.2.3",
+		"vitest": "^0.28.1"
 	},
 	"devEngines": {
 		"node": "16.x || 17.x || 18.x"
