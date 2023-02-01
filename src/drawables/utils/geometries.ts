@@ -13,3 +13,11 @@ export const defaultBoxSize = 0.5;
 export const defaultBoxGeometry = new BoxGeometry(defaultBoxSize, defaultBoxSize, defaultBoxSize);
 
 export const textHighlightBoxGeometry = new BoxGeometry(0.001, 0.001, 0.00001);
+
+// Graph data structures
+export const defaultBlockSize = 15;
+export const defaultBlockGeometry = new BoxGeometry(
+	defaultBlockSize,
+	defaultBlockSize,
+	defaultBlockSize,
+);

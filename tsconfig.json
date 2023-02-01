@@ -20,7 +20,7 @@
 			"@/*": ["./src/*"]
 		},
 		"strictNullChecks": true,
-		"types": ["vitest/globals"],
+		"types": ["vitest/globals"]
 	},
 	"include": ["src"],
 	"references": [{ "path": "./tsconfig.node.json" }]

@@ -24,7 +24,7 @@ const crossOriginIsolation = () => ({
 // https://vitejs.dev/config/
 export default defineConfig({
 	test: {
-		globals: false,
+		globals: true,
 		environment: 'jsdom',
 		deps: {
 			inline: ['opentype.js'],
@@ -50,5 +50,7 @@ export default defineConfig({
 	//   - install the local package in this project (`npm i <path_cloned_threejs>`)
 	//   - enable the flag below
 	// Enable this to test ThreeJS locally.
-	optimizeDeps: { include: ['three'] },
+	optimizeDeps: {
+		include: ['three'],
+	},
 });

@@ -1,11 +1,11 @@
 import { useTextSelectionContext } from '@/providers';
 import React, { useCallback, useLayoutEffect, useRef } from 'react';
 import { Color, InstancedMesh, Object3D } from 'three';
-import { HighlightedText } from '../HighlightedText/HighlightedText';
-import { defaultBlockColor, findMatchBlockColor } from '../utils/colors';
-import { defaultBoxGeometry, defaultBoxSize } from '../utils/geometries';
-import { defaultBlockMaterial } from '../utils/materials';
-import { defined } from '../utils/utils';
+import { HighlightedText } from '@/drawables/HighlightedText/HighlightedText';
+import { defaultBlockColor, findMatchBlockColor } from '@/drawables/utils/colors';
+import { defaultBoxGeometry, defaultBoxSize } from '@/drawables/utils/geometries';
+import { defaultBlockMaterial } from '@/drawables/utils/materials';
+import { defined } from '@/drawables/utils/utils';
 
 export interface Block {
 	position?: {
@@ -23,13 +23,13 @@ export interface Block {
 	text?: string;
 }
 
-interface InstancedBlocksProps {
+interface Props {
 	blocks: Block[];
 }
 
 const SCALE_MOD = 0.1;
 
-export const InstancedBlocks: React.FC<InstancedBlocksProps> = ({ blocks }) => {
+export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 	const { selectedText } = useTextSelectionContext();
 	const meshRef = useRef<InstancedMesh>(null);
 

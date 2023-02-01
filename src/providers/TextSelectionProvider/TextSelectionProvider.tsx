@@ -1,6 +1,6 @@
 import React, { createContext, Dispatch, SetStateAction, useContext, useState } from 'react';
 
-interface TextSelectionContextProps {
+export interface TextSelectionContextProps {
 	selectedText: string;
 	setSelectedText: Dispatch<SetStateAction<string>>;
 }

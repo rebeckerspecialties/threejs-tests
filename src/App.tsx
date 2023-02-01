@@ -1,4 +1,4 @@
-import { Floor, ImmersiveStats, PlayerNavigation } from '@/drawables';
+import { ImmersiveStats, PlayerNavigation } from '@/drawables';
 import { Examples } from '@/examples';
 import { TextSelectionProvider } from '@/providers';
 import { PerspectiveCamera } from '@react-three/drei';
@@ -15,7 +15,7 @@ const App: React.FC = () => {
 				<XR>
 					<ambientLight />
 					<pointLight position={[10, 10, 10]} />
-					<Floor />
+					{/* <Floor /> */}
 					<Controllers />
 
 					<Examples />
