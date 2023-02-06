@@ -1,3 +1,17 @@
+import { Block } from '@/drawables/InstancedBlocks/InstancedBlocks';
+import { getBlockScaleFromText, getCharSizeFromFontSize } from '@/drawables/utils/block';
+import {
+	defaultBlockColor,
+	defaultThemeColor,
+	findMatchBlockColor,
+} from '@/drawables/utils/colors';
+import {
+	defaultGraphBlockDepth,
+	defaultGraphBlockGeometry,
+	defaultGraphBlockSize,
+	textHighlightBoxGeometry,
+} from '@/drawables/utils/geometries';
+import { defined, FONT_URLS } from '@/drawables/utils/utils';
 import { useTextSelectionContext } from '@/providers';
 import { useFrame, useThree } from '@react-three/fiber';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
@@ -12,20 +26,7 @@ import {
 	Vector3,
 } from 'three';
 import ThreeForceGraph from 'three-forcegraph';
-import { Text as TroikaText, getSelectionRects } from 'troika-three-text';
-import { defined } from '@/drawables/utils/utils';
-import {
-	defaultThemeColor,
-	defaultBlockColor,
-	findMatchBlockColor,
-} from '@/drawables/utils/colors';
-import {
-	defaultBlockGeometry,
-	defaultBlockSize,
-	defaultBoxSize,
-	textHighlightBoxGeometry,
-} from '@/drawables/utils/geometries';
-import { Block } from '@/drawables/InstancedBlocks/InstancedBlocks';
+import { getSelectionRects, Text as TroikaText } from 'troika-three-text';
 import { genTree } from './utils';
 
 export interface GraphBlock extends Block {
@@ -44,6 +45,8 @@ interface Props {
 }
 
 const SCALE_MODIFIER = 0.1;
+const GRAPH_FONT_SIZE = 0.5;
+const { width: charWidth, height: charHeight } = getCharSizeFromFontSize(GRAPH_FONT_SIZE);
 
 export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 	const { scene } = useThree();
@@ -74,7 +77,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 	const getZTranslation = useCallback(
 		({
-			size = defaultBoxSize,
+			size = defaultGraphBlockSize,
 			text = '',
 			scale = { width: 1, height: 1, depth: 1 },
 		}: {
@@ -113,13 +116,22 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 					// update the group ref position
 					if (defined(groupRef.current?.[node.id])) {
-						groupRef.current?.[node.id].position.set(coords.x, coords.y ?? 0, coords.z ?? 0);
+						const { text, scale } = blocks[node.id] ?? {};
+						const { x: scaleTextX, y: scaleTextY } = getBlockScaleFromText(text, {
+							boxInitialSize: defaultGraphBlockSize,
+							lineHeight: charHeight,
+							charWidth,
+							paddingX: 0,
+							paddingY: 0,
+						});
+
+						groupRef.current?.[node.id].position.set(
+							coords.x - (scaleTextX * defaultGraphBlockSize) / 2,
+							(coords.y ?? 0) + (scaleTextY * defaultGraphBlockSize) / 2,
+							coords.z ?? 0,
+						);
 						groupRef.current?.[node.id].translateZ(
-							getZTranslation({
-								size: 15,
-								text: blocks[node.id].text ?? '',
-								scale: blocks[node.id].scale ?? { width: 1, height: 1, depth: 1 },
-							}),
+							getZTranslation({ size: defaultGraphBlockDepth, text, scale }),
 						);
 
 						scene.add(groupRef.current?.[node.id]);
@@ -143,7 +155,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 		// create a instanced mesh for all nodes in the graph
 		nodeMeshRef.current = new InstancedMesh(
-			defaultBlockGeometry,
+			defaultGraphBlockGeometry,
 			new MeshBasicMaterial({
 				color: defaultBlockColor,
 				opacity: 0.7,
@@ -156,7 +168,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 		// set the node mesh as the object for each node
 		graph.nodeThreeObject((node) => {
-			const { scale = { width: 1, height: 1, depth: 1 }, text = '' } =
+			const { scale = { width: 0, height: 0, depth: 1 }, text = '' } =
 				blocks[!Number.isNaN(node.id) ? Number(node.id) : 0];
 
 			let scaleMod = 0;
@@ -167,7 +179,18 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 				blockColor = findMatchBlockColor;
 			}
 
-			object3D.scale.set(scale.width + scaleMod, scale.height + scaleMod, scale.depth + scaleMod);
+			// calculate dynamic block size from its text content
+			const { x: scaleTextX, y: scaleTextY } = getBlockScaleFromText(text, {
+				boxInitialSize: defaultGraphBlockSize,
+				lineHeight: charHeight,
+				charWidth,
+			});
+
+			object3D.scale.set(
+				scale.width + scaleMod + scaleTextX,
+				scale.height + scaleMod + scaleTextY,
+				scale.depth + scaleMod,
+			);
 			object3D.updateMatrix();
 
 			if (node?.id !== undefined) {
@@ -177,11 +200,10 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 				// set color of the instanced mesh to the node's color
 				nodeMeshRef.current?.setColorAt(Number(node.id), blockColor);
 
-				// create a group text object for the node
-				groupRef.current?.push(new Group());
 				const textObject = new TroikaText();
 				textObject.text = text;
-				textObject.fontSize = 0.5;
+				textObject.font = FONT_URLS.Mono;
+				textObject.fontSize = GRAPH_FONT_SIZE;
 				textObject.color = defaultThemeColor.editor.foreground;
 				textObject.sync();
 
@@ -197,8 +219,10 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 				// move the selection mesh to the front
 				selectionMesh.position.set(0, 0, -0.01);
 
-				groupRef.current?.[Number(node.id)].add(textObject);
-				groupRef.current?.[Number(node.id)].add(selectionMesh);
+				const textGroup = new Group();
+				textGroup.add(textObject);
+				textGroup.add(selectionMesh);
+				groupRef.current?.push(textGroup);
 			}
 
 			return nodeMeshRef.current ?? object3D;
@@ -214,7 +238,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 	useLayoutEffect(() => {
 		if (defined(graphRef.current) && defined(nodeMeshRef.current)) {
 			for (let idx = 0; idx < blocks.length; idx++) {
-				const { scale = { width: 1, height: 1, depth: 1 }, text = '' } = blocks[idx];
+				const { scale = { width: 0, height: 0, depth: 1 }, text = '' } = blocks[idx];
 
 				let scaleMod = 0;
 				let blockColor: Color = defaultBlockColor;
@@ -231,7 +255,18 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 				const scaleToModify = new Vector3();
 				nodeMeshRef.current.matrix.decompose(position, rotation, scaleToModify);
 
-				scaleToModify.set(scale.width + scaleMod, scale.height + scaleMod, scale.depth + scaleMod);
+				// calculate dynamic block size from its text content
+				const { x: blockScaleTextX, y: blockScaleTextY } = getBlockScaleFromText(text, {
+					boxInitialSize: defaultGraphBlockSize,
+					lineHeight: charHeight,
+					charWidth,
+				});
+
+				scaleToModify.set(
+					scale.width + scaleMod + blockScaleTextX,
+					scale.height + scaleMod + blockScaleTextY,
+					scale.depth + scaleMod,
+				);
 
 				nodeMeshRef.current.matrix.compose(position, rotation, scaleToModify);
 
@@ -244,14 +279,21 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 				// update the text position
 				if (defined(groupRef.current?.[idx])) {
-					groupRef.current?.[idx].position.set(position.x, position.y, position.z);
+					const { x: scaleTextX, y: scaleTextY } = getBlockScaleFromText(text, {
+						boxInitialSize: defaultGraphBlockSize,
+						lineHeight: charHeight,
+						charWidth,
+						paddingX: 0,
+						paddingY: 0,
+					});
+					groupRef.current?.[idx].position.set(
+						position.x - (scaleTextX * defaultGraphBlockSize) / 2,
+						position.y + (scaleTextY * defaultGraphBlockSize) / 2,
+						position.z,
+					);
 
 					groupRef.current?.[idx].translateZ(
-						getZTranslation({
-							size: defaultBlockSize,
-							text,
-							scale,
-						}),
+						getZTranslation({ size: defaultGraphBlockDepth, text, scale }),
 					);
 				}
 			}

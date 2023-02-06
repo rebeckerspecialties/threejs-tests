@@ -9,13 +9,15 @@ export const ExampleHighlightedText: React.FC = () => {
 	const blocks: Block[] = [
 		{
 			position: { x: 0, y: 0.5, z: -5 },
-			scale: { width: 2, height: 2, depth: 1 },
-			text: 'Lorem ipsum dolor sit amet,\nconsectetur adipiscing elit,\nsed do eiusmod tempor.',
+			text: 'PRG000_D82B:\n\tRTS\n\nObject_HitTest:\n\tLDA #$01\n\tJMP PRG000_D83D',
 		},
 		{
 			position: { x: 0, y: 2, z: -5 },
-			scale: { width: 2, height: 2, depth: 1 },
-			text: 'At vero eos et accusamus et\niusto odio dignissimos ducimus\nqui tempor praesentium.',
+			text: 'Object_HitTestRespond:\n\tLDA #$00 W',
+		},
+		{
+			position: { x: 2, y: 2, z: -5 },
+			text: 'PRG000_D83D:\n\tSTA <Temp_Var16\n\n\tLDA Objects_PlayerHitStat,X\n\tAND #%11111100\n\tSTA Objects_PlayerHitStat,X\n\n\tCLC\n\n\tLDA <Player_IsDying\n\tORA Player_OffScreen\n\tORA Player_Behind_En\n\tBNE PRG000_D82B\n\n\tJSR Object_CalcBoundBox\n\n\tLDA <Player_Suit\n\tBEQ PRG000_D862\n\n\tLDA #$00\n\n\tLDY Player_IsDucking\t \n\tBNE PRG000_D862\n\n\tLDA #$01',
 		},
 	];
 
@@ -31,18 +33,18 @@ export const ExampleHighlightedText: React.FC = () => {
 			<Button
 				size={[0.4, 0.3, 0.15]}
 				position={[-1, 1, -5]}
-				onClick={() => setSelectedText('Lorem')}
-				onSelect={() => setSelectedText('Lorem')}
+				onClick={() => setSelectedText('AND')}
+				onSelect={() => setSelectedText('AND')}
 			>
-				select &quot;Lorem&quot;
+				select &quot;AND&quot;
 			</Button>
 			<Button
 				size={[0.4, 0.3, 0.15]}
 				position={[-1, 0.5, -5]}
-				onClick={() => setSelectedText('tempor')}
-				onSelect={() => setSelectedText('tempor')}
+				onClick={() => setSelectedText('W')}
+				onSelect={() => setSelectedText('W')}
 			>
-				select &quot;tempor&quot;
+				select &quot;W&quot;
 			</Button>
 			<Button
 				size={[0.4, 0.3, 0.15]}

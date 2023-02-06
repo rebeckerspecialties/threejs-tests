@@ -1,11 +1,12 @@
-import { useTextSelectionContext } from '@/providers';
-import React, { useCallback, useLayoutEffect, useRef } from 'react';
-import { Color, InstancedMesh, Object3D } from 'three';
 import { HighlightedText } from '@/drawables/HighlightedText/HighlightedText';
+import { getBlockScaleFromText } from '@/drawables/utils/block';
 import { defaultBlockColor, findMatchBlockColor } from '@/drawables/utils/colors';
 import { defaultBoxGeometry, defaultBoxSize } from '@/drawables/utils/geometries';
 import { defaultBlockMaterial } from '@/drawables/utils/materials';
 import { defined } from '@/drawables/utils/utils';
+import { useTextSelectionContext } from '@/providers';
+import React, { useCallback, useLayoutEffect, useRef } from 'react';
+import { Color, InstancedMesh, Object3D } from 'three';
 
 export interface Block {
 	position?: {
@@ -43,7 +44,7 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 		for (let idx = 0; idx < blocks.length; idx++) {
 			const {
 				position = { x: 0, y: 0, z: 0 },
-				scale = { width: 1, height: 1, depth: 1 },
+				scale = { width: 0, height: 0, depth: 1 },
 				rotationY = 0,
 				text = '',
 			} = blocks[idx];
@@ -55,9 +56,16 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 				blockColor = findMatchBlockColor;
 			}
 
+			// calculate dynamic block size from its text content
+			const { x: textWidth, y: textHeight } = getBlockScaleFromText(text);
+
 			// setting blocks
 			object3D.position.set(position.x, position.y, position.z);
-			object3D.scale.set(scale.width + scaleMod, scale.height + scaleMod, scale.depth + scaleMod);
+			object3D.scale.set(
+				scale.width + scaleMod + textWidth,
+				scale.height + scaleMod + textHeight,
+				scale.depth + scaleMod,
+			);
 
 			// object3D keeps last rotation, need to revert and apply current
 			object3D.rotateY(rotationY - lastBlockRotation);

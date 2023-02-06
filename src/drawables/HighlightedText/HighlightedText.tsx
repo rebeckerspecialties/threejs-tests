@@ -1,12 +1,12 @@
+import { defaultThemeColor } from '@/drawables/utils/colors';
+import { textHighlightBoxGeometry } from '@/drawables/utils/geometries';
+import { defined, FONT_SIZE, FONT_URLS } from '@/drawables/utils/utils';
 import { useTextSelectionContext } from '@/providers';
 import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Group, InstancedMesh, Object3D } from 'three';
 import { getSelectionRects, Text as TroikaText } from 'troika-three-text';
-import { defaultThemeColor } from '../utils/colors';
-import { textHighlightBoxGeometry } from '../utils/geometries';
-import { defined } from '../utils/utils';
 
 interface HighlightedTextProps {
 	text: string;
@@ -95,7 +95,12 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 
 	return (
 		<group ref={groupRef}>
-			<Text ref={textRef} fontSize={0.05} color={defaultThemeColor.editor.foreground}>
+			<Text
+				ref={textRef}
+				fontSize={FONT_SIZE}
+				color={defaultThemeColor.editor.foreground}
+				font={FONT_URLS.Mono}
+			>
 				{text}
 			</Text>
 			{selectionIndexes.length > 0 && (
