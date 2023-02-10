@@ -1,5 +1,5 @@
 // This needs to be imported at the top of the file or we will have a import race condition
-import '@/test/__mocks__/troikaText';
+import '@/test/__mocks__/dreiText';
 
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { InstancedMesh } from 'three';
@@ -66,12 +66,13 @@ describe('NodeGraph', () => {
 		const renderer = await createTestRenderer('Fake');
 
 		// get instanced mesh from children and check if the correct amount of blocks are rendered
-		const instancedMesh = renderer.scene.children[0].children[0];
+		// nodegraph is always the last one of the scene.children (first ones are text groups)
+		const instancedMesh = renderer.scene.children[blocks.length].children[0];
 		expect((instancedMesh.instance as InstancedMeshNode).count).toBe(blocks.length);
 
 		// check if the correct amount of lines are rendered
 		// get children but skip the first one because that is the instanced mesh
-		const children = renderer.scene.children[0].children.slice(1);
+		const children = renderer.scene.children[blocks.length].children.slice(1);
 		expect(children.length).toBe(blocks.length - 1);
 	});
 
@@ -119,11 +120,10 @@ describe('NodeGraph', () => {
 		});
 
 		// get instanced mesh from children and check if the correct amount of blocks are rendered
-		let instancedMesh = renderer.scene.children[1].children[1].instance as InstancedMeshNode;
-		let secondInstancedMesh = renderer.scene.children[2].children[1].instance as InstancedMeshNode;
+		const instancedMesh = renderer.scene.children[0].children[1].instance as InstancedMeshNode;
 
 		expect(instancedMesh.count).toBe(1);
-		expect(secondInstancedMesh.count).toBe(0);
+		expect(renderer.scene.children[1].children.length).toBe(1);
 
 		await renderer.update(
 			<TextProviderWrapper key="t0" searchText={'accusamus'}>
@@ -134,10 +134,10 @@ describe('NodeGraph', () => {
 			await renderer.advanceFrames(1, 1);
 		});
 
-		instancedMesh = renderer.scene.children[1].children[1].instance as InstancedMeshNode;
-		secondInstancedMesh = renderer.scene.children[2].children[1].instance as InstancedMeshNode;
+		const secondInstancedMesh = renderer.scene.children[1].children[1]
+			.instance as InstancedMeshNode;
 
-		expect(instancedMesh.count).toBe(0);
 		expect(secondInstancedMesh.count).toBe(1);
+		expect(renderer.scene.children[0].children.length).toBe(1);
 	});
 });

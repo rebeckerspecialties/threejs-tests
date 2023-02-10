@@ -5,8 +5,9 @@ import { defaultBoxGeometry, defaultBoxSize } from '@/drawables/utils/geometries
 import { defaultBlockMaterial } from '@/drawables/utils/materials';
 import { defined } from '@/drawables/utils/utils';
 import { useTextSelectionContext } from '@/providers';
-import React, { useCallback, useLayoutEffect, useRef } from 'react';
-import { Color, InstancedMesh, Object3D } from 'three';
+import { useFrame } from '@react-three/fiber';
+import React, { createRef, RefObject, useCallback, useLayoutEffect, useRef } from 'react';
+import { Color, Group, InstancedMesh, Object3D, Vector3 } from 'three';
 
 export interface Block {
 	position?: {
@@ -33,6 +34,7 @@ const SCALE_MOD = 0.1;
 export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 	const { selectedText } = useTextSelectionContext();
 	const meshRef = useRef<InstancedMesh>(null);
+	const textPositionRefs: Array<RefObject<Group>> = blocks.map(() => createRef());
 
 	useLayoutEffect(() => {
 		if (meshRef.current === null) {
@@ -40,7 +42,6 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 		}
 
 		const object3D = new Object3D();
-		let lastBlockRotation = 0;
 		for (let idx = 0; idx < blocks.length; idx++) {
 			const {
 				position = { x: 0, y: 0, z: 0 },
@@ -66,10 +67,7 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 				scale.height + scaleMod + textHeight,
 				scale.depth + scaleMod,
 			);
-
-			// object3D keeps last rotation, need to revert and apply current
-			object3D.rotateY(rotationY - lastBlockRotation);
-			lastBlockRotation = rotationY;
+			object3D.rotation.y = rotationY;
 
 			object3D.updateMatrix();
 			meshRef.current.setColorAt(idx, blockColor);
@@ -81,6 +79,21 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 			meshRef.current.instanceColor.needsUpdate = true;
 		}
 	}, [blocks, selectedText]);
+
+	useFrame(() => {
+		for (let idx = 0; idx < blocks.length; idx++) {
+			const { rotationY = 0, scale, text, position = { x: 0, y: 0, z: 0 } } = blocks[idx];
+
+			if (defined(textPositionRefs?.[idx]?.current)) {
+				textPositionRefs[idx].current?.position.set(position.x, position.y, position.z);
+				textPositionRefs[idx].current?.translateOnAxis(
+					new Vector3(0, 0, 1),
+					getZTranslation(text, scale),
+				);
+				textPositionRefs[idx].current?.setRotationFromAxisAngle(new Vector3(0, 1, 0), rotationY);
+			}
+		}
+	});
 
 	const getZTranslation = useCallback(
 		(
@@ -103,14 +116,17 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 				args={[defaultBoxGeometry, defaultBlockMaterial, blocks.length]}
 			/>
 			{blocks.map(
-				({ text = '', position = { x: 0, y: 0, z: 0 }, rotationY = 0, scale }, blockIdx) =>
+				({ text = '', position = { x: 0, y: 0, z: 0 } }, blockIdx) =>
 					text.length > 0 && (
 						<HighlightedText
 							key={`t-${blockIdx}`}
+							ref={textPositionRefs[blockIdx]}
 							text={text}
-							position={position}
-							rotationY={rotationY}
-							translate={{ x: 0, y: 0, z: getZTranslation(text, scale) }}
+							position={{
+								x: position.x,
+								y: position.y,
+								z: position.z,
+							}}
 						/>
 					),
 			)}

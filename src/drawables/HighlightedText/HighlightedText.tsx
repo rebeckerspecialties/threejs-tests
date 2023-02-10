@@ -1,32 +1,31 @@
 import { defaultThemeColor } from '@/drawables/utils/colors';
 import { textHighlightBoxGeometry } from '@/drawables/utils/geometries';
-import { defined, FONT_SIZE, FONT_URLS } from '@/drawables/utils/utils';
-import { useTextSelectionContext } from '@/providers';
+import { defined, FONT_SIZE } from '@/drawables/utils/utils';
+import { useTextSelectionContext, useThemeContext } from '@/providers';
 import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import React, { useEffect, useMemo, useRef } from 'react';
+import { forwardRef, useMemo, useRef } from 'react';
 import { Group, InstancedMesh, Object3D } from 'three';
 import { getSelectionRects, Text as TroikaText } from 'troika-three-text';
 
 interface HighlightedTextProps {
 	text: string;
 	position: { x: number; y: number; z: number };
-	translate?: { x: number; y: number; z: number };
-	rotationY?: number;
+	fontSize?: number;
 }
 
 /**
  * This component uses the context TextSelectionContext to search and highlight
  * occurrences found in text.
+ *
+ * Remember to use <Suspense> to invoke this component to avoid VR glitches.
  */
-export const HighlightedText: React.FC<HighlightedTextProps> = ({
-	text,
-	position,
-	translate = { x: 0, y: 0, z: 0 },
-	rotationY = 0,
-}) => {
+export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function HighlightedText(
+	{ text, position, fontSize = FONT_SIZE },
+	groupRef,
+) {
 	const { selectedText } = useTextSelectionContext();
-	const groupRef = useRef<Group>(null);
+	const { fontURL } = useThemeContext();
 	const textRef = useRef<typeof TroikaText>(null);
 	const meshRef = useRef<InstancedMesh>(null);
 	const tickRef = useRef({ lastSelectedText: '' });
@@ -47,18 +46,6 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 		return selectionIndexes;
 	}, [text, selectedText]);
 
-	useEffect(() => {
-		if (!defined(groupRef.current)) {
-			return;
-		}
-
-		groupRef.current.position.set(position.x, position.y, position.z);
-		groupRef.current.translateX(translate.x);
-		groupRef.current.translateY(translate.y);
-		groupRef.current.translateZ(translate.z);
-		groupRef.current.rotation.y = rotationY;
-	}, [position, translate, rotationY]);
-
 	useFrame(() => {
 		if (
 			!defined(textRef.current) ||
@@ -76,7 +63,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 				textRef.current.textRenderInfo,
 				selectionIndexes[i],
 				selectionIndexes[i] + selectedText.length,
-			);
+			) ?? [{ left: 0, right: 0, top: 0, bottom: 0 }];
 
 			const width = right - left;
 			const height = top - bottom;
@@ -94,12 +81,12 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 	});
 
 	return (
-		<group ref={groupRef}>
+		<group ref={groupRef} position={[position.x, position.y, position.z]}>
 			<Text
 				ref={textRef}
-				fontSize={FONT_SIZE}
+				fontSize={fontSize}
 				color={defaultThemeColor.editor.foreground}
-				font={FONT_URLS.Mono}
+				font={fontURL}
 			>
 				{text}
 			</Text>
@@ -114,4 +101,4 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 			)}
 		</group>
 	);
-};
+});

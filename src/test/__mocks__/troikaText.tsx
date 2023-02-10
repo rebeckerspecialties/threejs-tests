@@ -31,5 +31,6 @@ vi.mock('troika-three-text', async () => {
 	return {
 		Text: TextMock,
 		getSelectionRects,
+		preloadFont: vi.fn(),
 	};
 });

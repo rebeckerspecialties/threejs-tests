@@ -65,7 +65,8 @@ export const BatchText: React.FC<Props> = ({ blocks }) => {
 			});
 		}
 
-		return function cleanup() {
+		// cleanup
+		return () => {
 			if (defined(batchedMeshRef.current)) {
 				scene.remove(batchedMeshRef.current);
 				batchedMeshRef.current.dispose();
