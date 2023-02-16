@@ -26,6 +26,7 @@ export default defineConfig({
 	test: {
 		globals: true,
 		environment: 'jsdom',
+		threads: false, // see https://github.com/vitest-dev/vitest/issues/740
 		deps: {
 			inline: ['opentype.js'],
 		},

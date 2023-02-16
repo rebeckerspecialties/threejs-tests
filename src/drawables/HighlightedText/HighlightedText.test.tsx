@@ -1,5 +1,6 @@
 // This needs to be imported at the top of the file or we will have a import race condition
 import '@/test/__mocks__/dreiText';
+import '@/test/__mocks__/reactThreeXR';
 
 // Add new imports below here
 import { TextProviderWrapper } from '@/test/utils/TextProviderWrapper';

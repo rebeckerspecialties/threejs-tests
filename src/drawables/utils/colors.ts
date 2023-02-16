@@ -5,6 +5,7 @@ export const defaultThemeColor = {
 	editor: {
 		foreground: '#000000',
 		findMatchBackground: '#FF9900',
+		selectionBackground: '#264f78',
 	},
 	blocks: {
 		default: '#708090',

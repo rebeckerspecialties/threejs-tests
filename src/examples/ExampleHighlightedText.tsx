@@ -1,4 +1,3 @@
-import { Button } from '@/drawables';
 import { useTextSelectionContext } from '@/providers/TextSelectionProvider/TextSelectionProvider';
 import React, { useEffect } from 'react';
 import { Block, InstancedBlocks } from '../drawables/InstancedBlocks/InstancedBlocks';
@@ -27,33 +26,5 @@ export const ExampleHighlightedText: React.FC = () => {
 		};
 	}, [setSelectedText]);
 
-	return (
-		<>
-			<InstancedBlocks blocks={blocks} />
-			<Button
-				size={[0.4, 0.3, 0.15]}
-				position={[-1, 1, -5]}
-				onClick={() => setSelectedText('AND')}
-				onSelect={() => setSelectedText('AND')}
-			>
-				select &quot;AND&quot;
-			</Button>
-			<Button
-				size={[0.4, 0.3, 0.15]}
-				position={[-1, 0.5, -5]}
-				onClick={() => setSelectedText('W')}
-				onSelect={() => setSelectedText('W')}
-			>
-				select &quot;W&quot;
-			</Button>
-			<Button
-				size={[0.4, 0.3, 0.15]}
-				position={[-1, 0, -5]}
-				onClick={() => setSelectedText('eos')}
-				onSelect={() => setSelectedText('eos')}
-			>
-				select &quot;eos&quot;
-			</Button>
-		</>
-	);
+	return <InstancedBlocks blocks={blocks} />;
 };

@@ -1,11 +1,7 @@
-import { Button } from '@/drawables';
 import { GraphBlock, NodeGraph } from '@/drawables/NodeGraph/NodeGraph';
-import { useTextSelectionContext } from '@/providers/TextSelectionProvider/TextSelectionProvider';
 import React from 'react';
 
 export const GraphExample: React.FC = () => {
-	const { setSelectedText } = useTextSelectionContext();
-
 	const blocks: GraphBlock[] = [
 		{
 			text: 'PRG000_D82B:\n\tRTS\n\nObject_HitTest:\n\tLDA #$01\n\tJMP PRG000_D83D',
@@ -34,33 +30,5 @@ export const GraphExample: React.FC = () => {
 		},
 	];
 
-	return (
-		<>
-			<NodeGraph blocks={blocks} />
-			<Button
-				size={[0.4, 0.3, 0.15]}
-				position={[-1, 1, -2]}
-				onClick={() => setSelectedText('LDA')}
-				onSelect={() => setSelectedText('LDA')}
-			>
-				select &quot;LDA&quot;
-			</Button>
-			<Button
-				size={[0.4, 0.3, 0.15]}
-				position={[-1, 0.5, -2]}
-				onClick={() => setSelectedText('BMI')}
-				onSelect={() => setSelectedText('BMI')}
-			>
-				select &quot;BMI&quot;
-			</Button>
-			<Button
-				size={[0.4, 0.3, 0.15]}
-				position={[-1, 0, -2]}
-				onClick={() => setSelectedText('ASL')}
-				onSelect={() => setSelectedText('ASL')}
-			>
-				select &quot;ASL&quot;
-			</Button>
-		</>
-	);
+	return <NodeGraph blocks={blocks} />;
 };
