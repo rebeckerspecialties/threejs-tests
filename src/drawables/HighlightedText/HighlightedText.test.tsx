@@ -44,14 +44,14 @@ describe('HighlightedText', () => {
 	});
 
 	it('should find one occurrence for highlight', async () => {
-		const renderer = await createTestRenderer(textContent, 'Fake');
+		const renderer = await createTestRenderer(textContent, 'aFakeText');
 		const highlightBlocksMeshObj = renderer.scene.children[0].children[1];
 		expect((highlightBlocksMeshObj.instance as InstancedMesh).isInstancedMesh).toBe(true);
 		expect((highlightBlocksMeshObj.instance as InstancedMesh).count).toBe(1);
 	});
 
 	it('should find more than one occurrence for highlight', async () => {
-		const renderer = await createTestRenderer(textContent, 'a');
+		const renderer = await createTestRenderer('a aFakeText a', 'a');
 		const highlightBlocksMeshObj = renderer.scene.children[0].children[1];
 		expect((highlightBlocksMeshObj.instance as InstancedMesh).isInstancedMesh).toBe(true);
 		expect((highlightBlocksMeshObj.instance as InstancedMesh).count).toBe(2);
@@ -59,14 +59,15 @@ describe('HighlightedText', () => {
 
 	// Test created from a bug found during manual testing
 	it('should be consistent between search changes', async () => {
-		const renderer = await createTestRenderer(textContent, 'a');
+		const text = 'a Fake Text aFakeText a';
+		const renderer = await createTestRenderer(text, 'a');
 		let highlightBlocksMeshObj = renderer.scene.children[0].children[1];
 		expect((highlightBlocksMeshObj.instance as InstancedMesh).isInstancedMesh).toBe(true);
 		expect((highlightBlocksMeshObj.instance as InstancedMesh).count).toBe(2);
 
 		await renderer.update(
 			<TextProviderWrapper key="t0" searchText="ThisShouldNotHighlight">
-				<HighlightedText key="t1" position={{ x: 0, y: 0, z: 0 }} text={textContent} />
+				<HighlightedText key="t1" position={{ x: 0, y: 0, z: 0 }} text={text} />
 			</TextProviderWrapper>,
 		);
 		highlightBlocksMeshObj = renderer.scene.children[0].children[1];
@@ -74,7 +75,7 @@ describe('HighlightedText', () => {
 
 		await renderer.update(
 			<TextProviderWrapper key="t0" searchText="Fake">
-				<HighlightedText key="t1" position={{ x: 0, y: 0, z: 0 }} text={textContent} />
+				<HighlightedText key="t1" position={{ x: 0, y: 0, z: 0 }} text={text} />
 			</TextProviderWrapper>,
 		);
 		highlightBlocksMeshObj = renderer.scene.children[0].children[1];

@@ -12,7 +12,7 @@ import {
 import { useTextSelectionContext, useThemeContext } from '@/providers';
 import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { Interactive, XRInteractionHandler } from '@react-three/xr';
+import { Interactive, XRInteractionEvent, XRInteractionHandler } from '@react-three/xr';
 import { forwardRef, RefObject, useMemo, useRef, useState } from 'react';
 import { Group, InstancedMesh, Intersection, LineSegments, Object3D } from 'three';
 import { getSelectionRects, Text as TroikaText } from 'troika-three-text';
@@ -49,20 +49,13 @@ export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function 
 		}
 
 		// get indexes where text was found and mount colorRanges entity
-		const selectionIndexes: number[] = [];
-		for (let i = 0; i <= text.length - selectedText.length; i++) {
-			if (text.slice(i, i + selectedText.length) === selectedText) {
-				selectionIndexes.push(i);
-			}
-		}
-		return selectionIndexes;
+		const selectionIndexes: WordIndex[] = getWordIndexesFromText(text, selectedText);
+		return selectionIndexes.map((wordIndex) => wordIndex.start as number); // start is always present
 	}, [text, selectedText]);
 
 	// list of indexes (start and end) in text that are interactive - basically every word
 	const wordIndexes: WordIndex[] = useMemo(() => {
-		const nonWordRegExp = /[;:,#]/; // TODO: verify if we have more symbols that are non-word
-		const commentRegExp = /;/;
-		return getWordIndexesFromText(text, { nonWordRegExp, commentRegExp });
+		return getWordIndexesFromText(text);
 	}, [text]);
 
 	useFrame(() => {
@@ -114,11 +107,10 @@ export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function 
 		setSelectionRectangles(selectionRects);
 	};
 
-	const preSelectWord: XRInteractionHandler = (event) => {
+	const highlightWord = (event: XRInteractionEvent, type: 'pre-select' | 'select') => {
 		if (selectionRectangles.length === 0 || !defined(groupRef?.current)) {
 			return;
 		}
-
 		const { intersection } = event;
 		const { point } = intersection as Intersection<Object3D<Event>>; // assuming intersection will never be undefined
 		const { position: groupPosition } = groupRef.current;
@@ -127,47 +119,36 @@ export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function 
 			y: point.y - groupPosition.y,
 		}; // relative point of the ray controller inside the text group
 		const idx = getRectangleIdxFromPoint(selectionRectangles, relativePoint);
-		if (idx !== -1) {
-			const { left = 0, right = 0, top = 0, bottom = 0 } = selectionRectangles[idx];
-			const width = right - left;
-			const height = top - bottom;
-			setShowPreSelectMesh(true); // need to set flag to show first so preSelectMeshRef exists
-			if (defined(preSelectMeshRef?.current)) {
-				preSelectMeshRef.current.position.set(left + width / 2, bottom + height / 2, 0);
-				preSelectMeshRef.current.scale.set(width * 1000, height * 1000, 1); // 1000 factor since geometry starts at 0.001
+		if (type === 'pre-select') {
+			if (idx !== -1) {
+				const { left = 0, right = 0, top = 0, bottom = 0 } = selectionRectangles[idx];
+				const width = right - left;
+				const height = top - bottom;
+				setShowPreSelectMesh(true); // need to set flag to show first so preSelectMeshRef exists
+				if (defined(preSelectMeshRef?.current)) {
+					preSelectMeshRef.current.position.set(left + width / 2, bottom + height / 2, 0);
+					preSelectMeshRef.current.scale.set(width * 1000, height * 1000, 1); // 1000 factor since geometry starts at 0.001
+				}
+			} else {
+				setShowPreSelectMesh(false);
 			}
 		} else {
-			setShowPreSelectMesh(false);
+			if (idx !== -1) {
+				// found the selection rectangle clicked, its index follows the same from wordIndexes
+				const { start, end } = wordIndexes[idx];
+				const textToSelect = text.slice(start, end);
+				setSelectedText(selectedText === textToSelect ? '' : textToSelect);
+			}
 		}
 	};
 
-	const selectWord: XRInteractionHandler = (event) => {
-		if (selectionRectangles.length === 0 || !defined(groupRef?.current)) {
-			return;
-		}
-		const { intersection } = event;
-		const { point } = intersection as Intersection<Object3D<Event>>; // assuming intersection will never be undefined
-		const { position: groupPosition } = groupRef.current;
-		const relativePoint = {
-			x: point.x - groupPosition.x,
-			y: point.y - groupPosition.y,
-		}; // relative point of the ray controller inside the text group
-		const idx = getRectangleIdxFromPoint(selectionRectangles, relativePoint);
-		if (idx !== -1) {
-			// found the selection rectangle clicked, its index follows the same from wordIndexes
-			const { start, end } = wordIndexes[idx];
-			const textToSelect = text.slice(start, end);
-			setSelectedText(selectedText === textToSelect ? '' : textToSelect);
-		}
-	};
+	const textOnMove: XRInteractionHandler = (e) => highlightWord(e, 'pre-select');
+	const textOnSelect: XRInteractionHandler = (e) => highlightWord(e, 'select');
+	const textOnBlur: XRInteractionHandler = () => setShowPreSelectMesh(false);
 
 	return (
 		<group ref={groupRef} position={[position.x, position.y, position.z]}>
-			<Interactive
-				onMove={preSelectWord}
-				onSelect={selectWord}
-				onBlur={() => setShowPreSelectMesh(false)}
-			>
+			<Interactive onMove={textOnMove} onSelect={textOnSelect} onBlur={textOnBlur}>
 				<Text
 					ref={textRef}
 					fontSize={fontSize}

@@ -3,7 +3,7 @@ import { getBlockScaleFromText } from '@/drawables/utils/block';
 import { defaultBlockColor, findMatchBlockColor } from '@/drawables/utils/colors';
 import { defaultBoxGeometry, defaultBoxSize } from '@/drawables/utils/geometries';
 import { defaultBlockMaterial } from '@/drawables/utils/materials';
-import { defined } from '@/drawables/utils/utils';
+import { defined, getWordIndexesFromText } from '@/drawables/utils/utils';
 import { useTextSelectionContext } from '@/providers';
 import { useFrame } from '@react-three/fiber';
 import React, { createRef, RefObject, useCallback, useLayoutEffect, useRef } from 'react';
@@ -52,7 +52,12 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 			let scaleMod = 0;
 			let blockColor: Color = defaultBlockColor;
 
-			if (selectedText.length > 0 && text.includes(selectedText)) {
+			if (
+				selectedText.length > 0 &&
+				getWordIndexesFromText(text, selectedText, {
+					findOne: true,
+				}).length > 0
+			) {
 				scaleMod = SCALE_MOD;
 				blockColor = findMatchBlockColor;
 			}
@@ -100,7 +105,12 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 			text: string = '',
 			scale: { width: number; height: number; depth: number } = { width: 1, height: 1, depth: 1 },
 		) => {
-			if (selectedText.length > 0 && text.includes(selectedText)) {
+			if (
+				selectedText.length > 0 &&
+				getWordIndexesFromText(text, selectedText, {
+					findOne: true,
+				}).length > 0
+			) {
 				return (defaultBoxSize * (scale.depth + SCALE_MOD)) / 2 + 0.011;
 			} else {
 				return (defaultBoxSize * scale.depth) / 2 + 0.011;

@@ -7,6 +7,12 @@ export const CHAR_WIDTH = 0.03; // base char width for a monospace font size of 
 export const FONT_URLS = {
 	Mono: 'fonts/RobotoMono-Regular.ttf',
 } as const;
+export const CODE_SYMBOLS = {
+	ASM_6502: {
+		comment: [';'],
+		nonWord: [';', ':', '#', ','], // TODO: verify if we have more symbols that are non-word
+	},
+};
 
 export function defined<T>(item: T): item is Exclude<T, null | undefined> {
 	return item !== undefined && item !== null;
@@ -65,43 +71,63 @@ export interface WordIndex {
  *
  * Spaces and tabs are considered by default, you can add more nonWord characters in the options.
  *
+ * If searchStr is provided, this functions as a whole word search.
  * If commentRegExp is included, it disregards the rest of the line starting from the comment identifier.
  */
 export function getWordIndexesFromText(
 	text: string = '',
-	options: { nonWordRegExp?: RegExp; commentRegExp?: RegExp } = {},
+	searchStr: string = '',
+	options: { nonWordChars?: string[]; commentChars?: string[]; findOne?: boolean } = {},
 ): WordIndex[] {
-	const { nonWordRegExp, commentRegExp } = options;
+	const {
+		nonWordChars = CODE_SYMBOLS.ASM_6502.nonWord,
+		commentChars = CODE_SYMBOLS.ASM_6502.comment,
+		findOne = false,
+	} = options;
 	let inComment = false;
 	let inWord = false;
 	const wordIndexes: WordIndex[] = [];
 	const emptySpace = [' ', '\t'];
 	const breakLine = ['\n'];
 	let wordIndex: WordIndex = {};
+	const isNonWordChar = (char: string) =>
+		emptySpace.includes(char) ||
+		breakLine.includes(char) ||
+		nonWordChars.includes(char) ||
+		commentChars.includes(char);
 	for (let i = 0; i < text.length; i++) {
-		if (
-			emptySpace.includes(text[i]) ||
-			breakLine.includes(text[i]) ||
-			(defined(nonWordRegExp) && nonWordRegExp.test(text[i])) ||
-			(defined(commentRegExp) && commentRegExp.test(text[i]))
-		) {
+		if (isNonWordChar(text[i])) {
 			if (inWord) {
 				inWord = false;
 				wordIndex.end = i;
 				wordIndexes.push({ ...wordIndex });
 				wordIndex = {};
+				if (findOne) {
+					break;
+				}
 			}
-			if (defined(commentRegExp) && commentRegExp.test(text[i])) {
+			if (commentChars.includes(text[i])) {
 				// if it's a comment then ignore the rest of the line
 				inComment = true;
 			} else if (breakLine.includes(text[i])) {
 				inComment = false;
 			}
 		} else {
-			// it's a word, only consider if not in a comment block
-			if (!inWord && !inComment) {
+			if (
+				!inWord &&
+				!inComment &&
+				(searchStr.length === 0 ||
+					(text.slice(i, i + searchStr.length) === searchStr &&
+						(i === 0 || isNonWordChar(text[i - 1])) &&
+						(text[i + searchStr.length] === undefined ||
+							isNonWordChar(text[i + searchStr.length]))))
+			) {
+				// it's a word, only consider if not in a comment block
 				inWord = true;
 				wordIndex.start = i;
+				if (searchStr.length !== 0) {
+					i += searchStr.length - 1;
+				}
 			}
 		}
 	}

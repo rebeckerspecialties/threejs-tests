@@ -6,7 +6,7 @@ import {
 	defaultGraphBlockGeometry,
 	defaultGraphBlockSize,
 } from '@/drawables/utils/geometries';
-import { defined } from '@/drawables/utils/utils';
+import { defined, getWordIndexesFromText } from '@/drawables/utils/utils';
 import { useTextSelectionContext } from '@/providers';
 import { useFrame, useThree } from '@react-three/fiber';
 import React, {
@@ -50,6 +50,27 @@ const SCALE_MODIFIER = 0.1;
 const GRAPH_FONT_SIZE = 0.5;
 const { width: charWidth, height: charHeight } = getCharSizeFromFontSize(GRAPH_FONT_SIZE);
 
+function getScaleAndColorMod(
+	text: string,
+	selectedText: string,
+): { scaleMod: number; blockColor: Color } {
+	if (
+		selectedText.length !== 0 &&
+		getWordIndexesFromText(text, selectedText, {
+			findOne: true,
+		}).length !== 0
+	) {
+		return {
+			scaleMod: SCALE_MODIFIER,
+			blockColor: findMatchBlockColor,
+		};
+	}
+	return {
+		scaleMod: 0,
+		blockColor: defaultBlockColor,
+	};
+}
+
 export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 	const { scene } = useThree();
 	const { selectedText } = useTextSelectionContext();
@@ -67,7 +88,12 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 			text: string;
 			scale: { width: number; height: number; depth: number };
 		}) => {
-			if (selectedText.length > 0 && text.includes(selectedText)) {
+			if (
+				selectedText.length !== 0 &&
+				getWordIndexesFromText(text, selectedText, {
+					findOne: true,
+				}).length !== 0
+			) {
 				return (size * (scale.depth + SCALE_MODIFIER)) / 2 + 0.011;
 			} else {
 				return (size * scale.depth) / 2 + 0.011;
@@ -138,14 +164,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 		graph.nodeThreeObject((node) => {
 			const { scale = { width: 0, height: 0, depth: 1 }, text = '' } =
 				blocks[!Number.isNaN(node.id) ? Number(node.id) : 0];
-
-			let scaleMod = 0;
-			let blockColor = defaultBlockColor;
-
-			if (selectedText.length > 0 && text.includes(selectedText)) {
-				scaleMod = SCALE_MODIFIER;
-				blockColor = findMatchBlockColor;
-			}
+			const { scaleMod, blockColor } = getScaleAndColorMod(text, selectedText);
 
 			// calculate dynamic block size from its text content
 			const { x: scaleTextX, y: scaleTextY } = getBlockScaleFromText(text, {
@@ -183,14 +202,8 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 		if (defined(graphRef.current) && defined(nodeMeshRef.current)) {
 			for (let idx = 0; idx < blocks.length; idx++) {
 				const { scale = { width: 0, height: 0, depth: 1 }, text = '' } = blocks[idx];
+				const { scaleMod, blockColor } = getScaleAndColorMod(text, selectedText);
 
-				let scaleMod = 0;
-				let blockColor: Color = defaultBlockColor;
-
-				if (selectedText.length > 0 && text.includes(selectedText)) {
-					scaleMod = 0.1;
-					blockColor = findMatchBlockColor;
-				}
 				// get instance of the mesh
 				nodeMeshRef.current?.getMatrixAt(idx, nodeMeshRef.current?.matrix);
 
