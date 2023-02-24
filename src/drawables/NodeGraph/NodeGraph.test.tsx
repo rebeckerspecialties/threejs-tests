@@ -79,9 +79,8 @@ describe('NodeGraph', () => {
 		expect(children.length).toBe(blocks.length);
 
 		// check if the correct amount of lines are rendered
-		const lines = renderer.scene.children[renderer.scene.children.length - 1].children.filter(
-			(child) => child._fiber.name !== 'graph-blocks',
-		);
+		// the first child is the instanced mesh, so we skip it
+		const lines = renderer.scene.children[renderer.scene.children.length - 1].children.slice(1);
 
 		expect(lines.length).toBe(blocks.length - 1);
 	});
