@@ -7,5 +7,6 @@ vi.mock('@react-three/xr', async () => {
 		Interactive: ({ children }: { children: React.ReactNode }) => (
 			<React.Fragment>{children}</React.Fragment>
 		),
+		useInteraction: () => ({}),
 	};
 });

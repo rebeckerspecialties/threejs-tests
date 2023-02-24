@@ -63,18 +63,27 @@ async function createTestRenderer(search: string) {
 }
 
 describe('NodeGraph', () => {
-	it('should render the correct amount of blocks and lines in the graph', async () => {
+	it('should render the correct amount of blocks, texts meshes, and lines in the graph', async () => {
 		const renderer = await createTestRenderer('Fake');
 
-		// get instanced mesh from children and check if the correct amount of blocks are rendered
+		// get instanced mesh from children of the graph and check if the correct amount of blocks are rendered
 		// nodegraph is always the last one of the scene.children (first ones are text groups)
-		const instancedMesh = renderer.scene.children[blocks.length].children[0];
-		expect((instancedMesh.instance as InstancedMeshNode).count).toBe(blocks.length);
+		const instancedMesh = renderer.scene.children[renderer.scene.children.length - 1].children[0];
+
+		expect((instancedMesh?.instance as InstancedMeshNode).count).toBe(blocks.length);
+
+		// check if the correct amount of texts are rendered
+		// get children but skip the last one as it is the graph itself
+		const children = renderer.scene.children.slice(0, renderer.scene.children.length - 1);
+
+		expect(children.length).toBe(blocks.length);
 
 		// check if the correct amount of lines are rendered
-		// get children but skip the first one because that is the instanced mesh
-		const children = renderer.scene.children[blocks.length].children.slice(1);
-		expect(children.length).toBe(blocks.length - 1);
+		const lines = renderer.scene.children[renderer.scene.children.length - 1].children.filter(
+			(child) => child._fiber.name !== 'graph-blocks',
+		);
+
+		expect(lines.length).toBe(blocks.length - 1);
 	});
 
 	it('should mantain the same position of the blocks when a rerender happens', async () => {
@@ -83,8 +92,10 @@ describe('NodeGraph', () => {
 			await renderer.advanceFrames(4000, 1);
 		});
 
-		// get instanced mesh from children and check if the correct amount of blocks are rendered
-		let instancedMesh = renderer.scene.children[0].children[0].instance as InstancedMeshNode;
+		// get instanced mesh from children of the graph and check if the correct amount of blocks are rendered
+		// nodegraph is always the last one of the scene.children (first ones are text groups)
+		let instancedMesh = renderer.scene.children[renderer.scene.children.length - 1].children[0]
+			.instance as InstancedMeshNode;
 
 		// get the position of the first block - this is the one that will be used to compare
 		const firstPosition = {
@@ -102,7 +113,8 @@ describe('NodeGraph', () => {
 		await ReactThreeTestRenderer.act(async () => {
 			await renderer.advanceFrames(4000, 1);
 		});
-		instancedMesh = renderer.scene.children[0].children[0].instance as InstancedMeshNode;
+		instancedMesh = renderer.scene.children[renderer.scene.children.length - 1].children[0]
+			.instance as InstancedMeshNode;
 
 		const secondPosition = {
 			x: instancedMesh.__data?.x.toFixed(),
@@ -121,9 +133,10 @@ describe('NodeGraph', () => {
 		});
 
 		// get instanced mesh from children and check if the correct amount of blocks are rendered
-		const instancedMesh = renderer.scene.children[0].children[1].instance as InstancedMeshNode;
+		const selectionInstancedMesh = renderer.scene.children[0].children[1]
+			.instance as InstancedMeshNode;
 
-		expect(instancedMesh.count).toBe(1);
+		expect(selectionInstancedMesh.count).toBe(1);
 		expect(renderer.scene.children[1].children.length).toBe(1);
 
 		await renderer.update(

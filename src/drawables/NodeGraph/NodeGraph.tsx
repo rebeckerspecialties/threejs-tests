@@ -18,18 +18,13 @@ import React, {
 	useMemo,
 	useRef,
 } from 'react';
-import {
-	Color,
-	Group,
-	InstancedMesh,
-	MeshBasicMaterial,
-	Object3D,
-	Quaternion,
-	Vector3,
-} from 'three';
+import { Color, Group, InstancedMesh, Object3D, Quaternion, Vector3 } from 'three';
 import ThreeForceGraph from 'three-forcegraph';
-import { HighlightedText } from '../HighlightedText/HighlightedText';
+import { HighlightedText } from '@/drawables/HighlightedText/HighlightedText';
 import { genTree } from './utils';
+import { defaultGraphBlockMaterial } from '@/drawables/utils/materials';
+import { useMounted } from '@/drawables/utils/useMounted';
+import useDrag from './useDrag';
 
 export interface GraphBlock extends Block {
 	/**
@@ -75,8 +70,14 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 	const { scene } = useThree();
 	const { selectedText } = useTextSelectionContext();
 	const graphRef = useRef<ThreeForceGraph>();
-	const nodeMeshRef = useRef<InstancedMesh>();
+	const nodeMeshRef = useRef<InstancedMesh>(null);
 	const textPositionRefs: Array<RefObject<Group>> = blocks.map(() => createRef());
+	const isMounted = useMounted();
+
+	const instancesBeingDragged = useDrag({
+		graph: graphRef,
+		nodeMesh: nodeMeshRef,
+	});
 
 	const getZTranslation = useCallback(
 		({
@@ -102,7 +103,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 		[selectedText],
 	);
 
-	// create function to update the node position, and takes the graph as a parameter
+	// update the node position
 	const updateNodePosition = useCallback(
 		(graph: ThreeForceGraph) => {
 			if (!defined(graph)) {
@@ -111,25 +112,26 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 			graph.nodePositionUpdate((object: InstancedMesh, coords, node) => {
 				if (defined(node.id)) {
+					const instanceId = Number(node.id); // we assume that the node id is the same as the instance id
+
 					// get matrix
-					object.getMatrixAt(Number(node.id), object.matrix);
+					object.getMatrixAt(instanceId, object.matrix);
 
 					// update position of the matrix
 					object.matrix.setPosition(coords.x, coords.y ?? 0, coords.z ?? 0);
 
-					// update position of texts instances
+					// update instance matrix
+					object.setMatrixAt(instanceId, object.matrix);
+					object.instanceMatrix.needsUpdate = true;
+
 					if (defined(textPositionRefs[node.id]?.current)) {
+						// update position of texts instances
 						const { text, scale = { width: 1, height: 1, depth: 1 } } = blocks[node.id];
 						textPositionRefs[node.id].current.position.set(coords.x, coords.y, coords.z);
 						textPositionRefs[node.id].current.translateZ(
 							getZTranslation({ size: defaultGraphBlockDepth, text, scale }),
 						);
 					}
-
-					// update instance matrix
-					object.setMatrixAt(Number(node.id), object.matrix);
-
-					object.instanceMatrix.needsUpdate = true;
 
 					return true;
 				}
@@ -140,6 +142,10 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 	// Create a graph for the blocks
 	const graph = useMemo(() => {
+		if (!isMounted && !defined(nodeMeshRef.current)) {
+			return;
+		}
+
 		if (defined(graphRef.current)) {
 			updateNodePosition(graphRef.current);
 			return graphRef.current;
@@ -147,17 +153,6 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 		const graph = new ThreeForceGraph().graphData(genTree(blocks));
 
-		// create a instanced mesh for all nodes in the graph
-		nodeMeshRef.current = new InstancedMesh(
-			defaultGraphBlockGeometry,
-			new MeshBasicMaterial({
-				color: defaultBlockColor,
-				opacity: 0.7,
-				transparent: true,
-				depthWrite: false,
-			}),
-			blocks.length,
-		);
 		const object3D = new Object3D();
 
 		// set the node mesh as the object for each node
@@ -188,7 +183,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 				nodeMeshRef.current?.setColorAt(Number(node.id), blockColor);
 			}
 
-			return nodeMeshRef.current ?? object3D;
+			return nodeMeshRef.current ?? new Object3D();
 		});
 
 		updateNodePosition(graph);
@@ -196,7 +191,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 		graphRef.current = graph;
 
 		return graph;
-	}, [blocks, selectedText, updateNodePosition]);
+	}, [blocks, isMounted, selectedText, updateNodePosition]);
 
 	useLayoutEffect(() => {
 		if (defined(graphRef.current) && defined(nodeMeshRef.current)) {
@@ -241,25 +236,34 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 	// add the graph to the scene
 	useEffect(() => {
-		graph.linkColor(() => 'red');
-		graph.linkOpacity(0.2);
+		graph?.linkColor(() => 'red');
+		graph?.linkOpacity(0.2);
 
-		scene.add(graph);
+		if (defined(graph)) {
+			scene.add(graph);
+		}
 
 		// cleanup
 		return () => {
 			// remove the graph from the scene
-			scene.remove(graph);
+			if (defined(graph)) {
+				scene.remove(graph);
+			}
 		};
 	}, [graph, scene]);
 
 	useFrame(() => {
-		graph.tickFrame();
+		graph?.tickFrame();
 	});
 
 	// node graph is rendered in the code above
 	return (
 		<>
+			<instancedMesh
+				ref={nodeMeshRef}
+				args={[defaultGraphBlockGeometry, defaultGraphBlockMaterial, blocks.length]}
+			/>
+
 			{blocks.map(
 				({ text = '', position = { x: 0, y: 0, z: 0 } }, blockIdx) =>
 					text.length > 0 && (
@@ -269,6 +273,11 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 							text={text}
 							position={position}
 							fontSize={GRAPH_FONT_SIZE}
+							addInteraction={
+								// depending on the instances being dragged or not, we add or remove the interaction
+								// as our intances ids are the same as the blocks ids, we can use the following condition
+								instancesBeingDragged.find((id) => id === blockIdx) === undefined
+							}
 						/>
 					),
 			)}

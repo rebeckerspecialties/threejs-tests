@@ -17,20 +17,19 @@ import { forwardRef, RefObject, useMemo, useRef, useState } from 'react';
 import { Group, InstancedMesh, Intersection, LineSegments, Object3D } from 'three';
 import { getSelectionRects, Text as TroikaText } from 'troika-three-text';
 
-interface HighlightedTextProps {
+interface Props {
 	text: string;
 	position: { x: number; y: number; z: number };
 	fontSize?: number;
+	addInteraction?: boolean;
 }
 
 /**
  * This component uses the context TextSelectionContext to search and highlight
  * occurrences found in text.
- *
- * Remember to use <Suspense> to invoke this component to avoid VR glitches.
  */
-export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function HighlightedText(
-	{ text, position, fontSize = FONT_SIZE },
+export const HighlightedText = forwardRef<Group, Props>(function HighlightedText(
+	{ text, position, fontSize = FONT_SIZE, addInteraction = true },
 	groupRef: RefObject<Group>,
 ) {
 	const [selectionRectangles, setSelectionRectangles] = useState<RectanglePoints[]>([]);
@@ -94,7 +93,7 @@ export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function 
 	const updateWordRectPositions = () => {
 		const selectionRects = wordIndexes.map(({ start = 0, end = 0 }) => {
 			const rects: RectanglePoints[] = getSelectionRects(
-				textRef.current.textRenderInfo,
+				textRef.current?.textRenderInfo,
 				start,
 				end,
 			) ?? [
@@ -148,7 +147,19 @@ export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function 
 
 	return (
 		<group ref={groupRef} position={[position.x, position.y, position.z]}>
-			<Interactive onMove={textOnMove} onSelect={textOnSelect} onBlur={textOnBlur}>
+			{addInteraction ? (
+				<Interactive onMove={textOnMove} onSelect={textOnSelect} onBlur={textOnBlur}>
+					<Text
+						ref={textRef}
+						fontSize={fontSize}
+						color={defaultThemeColor.editor.foreground}
+						font={fontURL}
+						onSync={updateWordRectPositions} // lifecycle - now we have textRenderInfo to get proper rectangles
+					>
+						{text}
+					</Text>
+				</Interactive>
+			) : (
 				<Text
 					ref={textRef}
 					fontSize={fontSize}
@@ -158,7 +169,8 @@ export const HighlightedText = forwardRef<Group, HighlightedTextProps>(function 
 				>
 					{text}
 				</Text>
-			</Interactive>
+			)}
+
 			{showPreSelectMesh && (
 				<lineSegments ref={preSelectMeshRef} args={[preSelectTextBoxGeometry]} position={[0, 0, 0]}>
 					<lineBasicMaterial color={defaultThemeColor.editor.selectionBackground} />
