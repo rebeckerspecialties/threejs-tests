@@ -1,6 +1,13 @@
-import { defaultThemeColor } from '@/drawables/utils/colors';
-import { preSelectTextBoxGeometry, textHighlightBoxGeometry } from '@/drawables/utils/geometries';
 import {
+	defaultFindMatchTextBackground,
+	defaultThemeColor,
+	getAvailableHighlightHexColor,
+	textBgColorsEntity,
+} from '@/drawables/utils/colors';
+import { preSelectTextBoxGeometry, textHighlightBoxGeometry } from '@/drawables/utils/geometries';
+import { defaultBasicMaterial } from '@/drawables/utils/materials';
+import {
+	arrayMatches,
 	defined,
 	FONT_SIZE,
 	getRectangleIdxFromPoint,
@@ -34,23 +41,23 @@ export const HighlightedText = forwardRef<Group, Props>(function HighlightedText
 ) {
 	const [selectionRectangles, setSelectionRectangles] = useState<RectanglePoints[]>([]);
 	const [showPreSelectMesh, setShowPreSelectMesh] = useState(false);
-	const { selectedText, setSelectedText } = useTextSelectionContext();
+	const { textSelections, setTextSelections } = useTextSelectionContext();
 	const { fontURL } = useThemeContext();
 	const textRef = useRef<typeof TroikaText>(null);
 	const selectionMeshRef = useRef<InstancedMesh>(null);
 	const preSelectMeshRef = useRef<LineSegments>(null);
-	const tickRef = useRef({ lastSelectedText: '' });
+	const tickRef = useRef<{ lastSelectedTexts: string[] }>({ lastSelectedTexts: [] });
 	const object3D = new Object3D();
 
-	const selectionIndexes: number[] = useMemo(() => {
-		if (text.length === 0 || selectedText.length === 0) {
+	const selectionIndexes: WordIndex[] = useMemo(() => {
+		const selectedTexts = Object.keys(textSelections);
+		if (text.length === 0 || selectedTexts.length === 0) {
 			return [];
 		}
 
 		// get indexes where text was found and mount colorRanges entity
-		const selectionIndexes: WordIndex[] = getWordIndexesFromText(text, selectedText);
-		return selectionIndexes.map((wordIndex) => wordIndex.start as number); // start is always present
-	}, [text, selectedText]);
+		return getWordIndexesFromText(text, selectedTexts);
+	}, [text, textSelections]);
 
 	// list of indexes (start and end) in text that are interactive - basically every word
 	const wordIndexes: WordIndex[] = useMemo(() => {
@@ -58,20 +65,22 @@ export const HighlightedText = forwardRef<Group, Props>(function HighlightedText
 	}, [text]);
 
 	useFrame(() => {
+		const selectedTexts = Object.keys(textSelections);
 		if (
 			!defined(textRef.current) ||
 			!defined(getSelectionRects) ||
-			tickRef.current.lastSelectedText === selectedText
+			arrayMatches(tickRef.current.lastSelectedTexts, selectedTexts)
 		) {
 			return;
 		}
 
 		// highlight selected texts
 		for (let i = 0; i < selectionIndexes.length; i++) {
+			const { start, end, text: textToSelect = '' } = selectionIndexes[i];
 			const selectionRects: RectanglePoints[] = getSelectionRects(
 				textRef.current.textRenderInfo,
-				selectionIndexes[i],
-				selectionIndexes[i] + selectedText.length,
+				start,
+				end,
 			) ?? [{ left: 0, right: 0, top: 0, bottom: 0 }];
 			const { right = 0, left = 0, top = 0, bottom = 0 } = mergeRects(selectionRects);
 
@@ -82,12 +91,16 @@ export const HighlightedText = forwardRef<Group, Props>(function HighlightedText
 			object3D.position.set(posX, posY, 0.0005); // adjust z position closer to text
 			object3D.scale.set(width * 1000, height * 1000, 1); // 1000 factor since geometry starts at 0.001
 			object3D.updateMatrix();
+			selectionMeshRef.current?.setColorAt(
+				i,
+				textBgColorsEntity[textSelections[textToSelect].hexColor] ?? defaultFindMatchTextBackground,
+			);
 			selectionMeshRef.current?.setMatrixAt(i, object3D.matrix);
 		}
 		if (defined(selectionMeshRef.current)) {
 			selectionMeshRef.current.instanceMatrix.needsUpdate = true;
 		}
-		tickRef.current.lastSelectedText = selectedText;
+		tickRef.current.lastSelectedTexts = [...selectedTexts];
 	});
 
 	const updateWordRectPositions = () => {
@@ -136,7 +149,21 @@ export const HighlightedText = forwardRef<Group, Props>(function HighlightedText
 				// found the selection rectangle clicked, its index follows the same from wordIndexes
 				const { start, end } = wordIndexes[idx];
 				const textToSelect = text.slice(start, end);
-				setSelectedText(selectedText === textToSelect ? '' : textToSelect);
+				if (textSelections[textToSelect] !== undefined) {
+					// selection already exists - user wants to de-select
+					const { [textToSelect]: _removed, ...newSelections } = textSelections;
+					setTextSelections(newSelections);
+				} else {
+					// user wants to select new text
+					if (Object.keys(textSelections).length < 3) {
+						const availableColor = getAvailableHighlightHexColor(textSelections);
+						const newSelections = {
+							...textSelections,
+							[textToSelect]: { hexColor: availableColor },
+						};
+						setTextSelections(newSelections);
+					}
+				}
 			}
 		}
 	};
@@ -178,14 +205,12 @@ export const HighlightedText = forwardRef<Group, Props>(function HighlightedText
 			)}
 			{
 				// blocks for highlighted text
-				selectionIndexes.length > 0 && (
+				selectionIndexes.length !== 0 && (
 					<instancedMesh
 						ref={selectionMeshRef}
-						args={[textHighlightBoxGeometry, undefined, selectionIndexes.length]}
+						args={[textHighlightBoxGeometry, defaultBasicMaterial, selectionIndexes.length]}
 						position={[0, 0, -0.001]} // initially render slight behind
-					>
-						<meshBasicMaterial color={defaultThemeColor.editor.findMatchBackground} />
-					</instancedMesh>
+					/>
 				)
 			}
 		</group>

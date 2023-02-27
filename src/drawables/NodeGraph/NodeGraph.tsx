@@ -1,30 +1,23 @@
+import { HighlightedText } from '@/drawables/HighlightedText/HighlightedText';
 import { Block } from '@/drawables/InstancedBlocks/InstancedBlocks';
 import { getBlockScaleFromText, getCharSizeFromFontSize } from '@/drawables/utils/block';
-import { defaultBlockColor, findMatchBlockColor } from '@/drawables/utils/colors';
+import { defaultBlockColor, mixColors, textBgColorsEntity } from '@/drawables/utils/colors';
 import {
 	defaultGraphBlockDepth,
 	defaultGraphBlockGeometry,
 	defaultGraphBlockSize,
 } from '@/drawables/utils/geometries';
+import { useMounted } from '@/drawables/utils/useMounted';
 import { defined, getWordIndexesFromText } from '@/drawables/utils/utils';
 import { useTextSelectionContext } from '@/providers';
+import { TextSelections } from '@/providers/TextSelectionProvider/TextSelectionProvider';
 import { useFrame, useThree } from '@react-three/fiber';
-import React, {
-	createRef,
-	RefObject,
-	useCallback,
-	useEffect,
-	useLayoutEffect,
-	useMemo,
-	useRef,
-} from 'react';
+import React, { createRef, RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Color, Group, InstancedMesh, Object3D, Quaternion, Vector3 } from 'three';
 import ThreeForceGraph from 'three-forcegraph';
-import { HighlightedText } from '@/drawables/HighlightedText/HighlightedText';
-import { genTree } from './utils';
-import { defaultGraphBlockMaterial } from '@/drawables/utils/materials';
-import { useMounted } from '@/drawables/utils/useMounted';
+import { defaultGraphBlockMaterial } from '../utils/materials';
 import useDrag from './useDrag';
+import { genTree } from './utils';
 
 export interface GraphBlock extends Block {
 	/**
@@ -47,17 +40,25 @@ const { width: charWidth, height: charHeight } = getCharSizeFromFontSize(GRAPH_F
 
 function getScaleAndColorMod(
 	text: string,
-	selectedText: string,
+	textSelections: TextSelections,
 ): { scaleMod: number; blockColor: Color } {
-	if (
-		selectedText.length !== 0 &&
-		getWordIndexesFromText(text, selectedText, {
-			findOne: true,
-		}).length !== 0
-	) {
+	const selectedTexts = Object.keys(textSelections);
+
+	const wordIndexes = getWordIndexesFromText(text, selectedTexts);
+	if (selectedTexts.length !== 0 && wordIndexes.length !== 0) {
+		const colors = selectedTexts
+			.filter(
+				(selectedText) => wordIndexes.findIndex((wordI) => wordI.text === selectedText) !== -1,
+			)
+			.map((selectedText) => textBgColorsEntity[textSelections[selectedText].hexColor]);
+		const blockColor =
+			colors.length === 3
+				? mixColors(colors.concat(new Color(3, 3, 3))) // force highlight if it contains all 3 selected texts
+				: mixColors(colors.concat(new Color(0.5, 0.5, 0.5)));
+
 		return {
 			scaleMod: SCALE_MODIFIER,
-			blockColor: findMatchBlockColor,
+			blockColor,
 		};
 	}
 	return {
@@ -68,7 +69,7 @@ function getScaleAndColorMod(
 
 export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 	const { scene } = useThree();
-	const { selectedText } = useTextSelectionContext();
+	const { textSelections } = useTextSelectionContext();
 	const graphRef = useRef<ThreeForceGraph>();
 	const nodeMeshRef = useRef<InstancedMesh>(null);
 	const textPositionRefs: Array<RefObject<Group>> = blocks.map(() => createRef());
@@ -89,9 +90,11 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 			text: string;
 			scale: { width: number; height: number; depth: number };
 		}) => {
+			const selectedTexts = Object.keys(textSelections);
+
 			if (
-				selectedText.length !== 0 &&
-				getWordIndexesFromText(text, selectedText, {
+				selectedTexts.length !== 0 &&
+				getWordIndexesFromText(text, selectedTexts, {
 					findOne: true,
 				}).length !== 0
 			) {
@@ -100,7 +103,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 				return (size * scale.depth) / 2 + 0.011;
 			}
 		},
-		[selectedText],
+		[textSelections],
 	);
 
 	// update the node position
@@ -159,7 +162,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 		graph.nodeThreeObject((node) => {
 			const { scale = { width: 0, height: 0, depth: 1 }, text = '' } =
 				blocks[!Number.isNaN(node.id) ? Number(node.id) : 0];
-			const { scaleMod, blockColor } = getScaleAndColorMod(text, selectedText);
+			const { scaleMod, blockColor } = getScaleAndColorMod(text, textSelections);
 
 			// calculate dynamic block size from its text content
 			const { x: scaleTextX, y: scaleTextY } = getBlockScaleFromText(text, {
@@ -175,12 +178,16 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 			);
 			object3D.updateMatrix();
 
-			if (node?.id !== undefined) {
+			if (node?.id !== undefined && defined(nodeMeshRef.current)) {
 				// set matrix of the instanced mesh to the node's matrix
 				nodeMeshRef.current?.setMatrixAt(Number(node.id), object3D.matrix);
+				nodeMeshRef.current.instanceMatrix.needsUpdate = true;
 
 				// set color of the instanced mesh to the node's color
 				nodeMeshRef.current?.setColorAt(Number(node.id), blockColor);
+				if (defined(nodeMeshRef.current.instanceColor)) {
+					nodeMeshRef.current.instanceColor.needsUpdate = true;
+				}
 			}
 
 			return nodeMeshRef.current ?? new Object3D();
@@ -191,13 +198,14 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 		graphRef.current = graph;
 
 		return graph;
-	}, [blocks, isMounted, selectedText, updateNodePosition]);
+	}, [blocks, isMounted, textSelections, updateNodePosition]);
 
-	useLayoutEffect(() => {
+	useFrame(() => {
 		if (defined(graphRef.current) && defined(nodeMeshRef.current)) {
+			// this is simple and light enough to run on every frame for now
 			for (let idx = 0; idx < blocks.length; idx++) {
 				const { scale = { width: 0, height: 0, depth: 1 }, text = '' } = blocks[idx];
-				const { scaleMod, blockColor } = getScaleAndColorMod(text, selectedText);
+				const { scaleMod, blockColor } = getScaleAndColorMod(text, textSelections);
 
 				// get instance of the mesh
 				nodeMeshRef.current?.getMatrixAt(idx, nodeMeshRef.current?.matrix);
@@ -220,19 +228,16 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 					scale.depth + scaleMod,
 				);
 
-				nodeMeshRef.current.matrix.compose(position, rotation, scaleToModify);
-
-				nodeMeshRef.current.setMatrixAt(idx, nodeMeshRef.current.matrix);
-
 				nodeMeshRef.current.setColorAt(idx, blockColor);
-				if (defined(nodeMeshRef.current.instanceColor)) {
-					nodeMeshRef.current.instanceColor.needsUpdate = true;
-				}
+				nodeMeshRef.current.matrix.compose(position, rotation, scaleToModify);
+				nodeMeshRef.current.setMatrixAt(idx, nodeMeshRef.current.matrix);
 			}
-
 			nodeMeshRef.current.instanceMatrix.needsUpdate = true;
+			if (defined(nodeMeshRef.current.instanceColor)) {
+				nodeMeshRef.current.instanceColor.needsUpdate = true;
+			}
 		}
-	}, [blocks, blocks.length, getZTranslation, selectedText]);
+	});
 
 	// add the graph to the scene
 	useEffect(() => {

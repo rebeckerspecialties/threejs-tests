@@ -18,6 +18,12 @@ export function defined<T>(item: T): item is Exclude<T, null | undefined> {
 	return item !== undefined && item !== null;
 }
 
+// compare two arrays if they both have same items and length
+export function arrayMatches(a: any[], b: any[]): boolean {
+	const setb = new Set(b);
+	return a.length === b.length && a.every((val) => setb.has(val));
+}
+
 export interface RectanglePoints {
 	left?: number;
 	right?: number;
@@ -64,6 +70,7 @@ export function getRectangleIdxFromPoint(
 export interface WordIndex {
 	start?: number;
 	end?: number;
+	text?: string;
 }
 
 /**
@@ -76,7 +83,7 @@ export interface WordIndex {
  */
 export function getWordIndexesFromText(
 	text: string = '',
-	searchStr: string = '',
+	searchStrs: string[] = [],
 	options: { nonWordChars?: string[]; commentChars?: string[]; findOne?: boolean } = {},
 ): WordIndex[] {
 	const {
@@ -100,6 +107,7 @@ export function getWordIndexesFromText(
 			if (inWord) {
 				inWord = false;
 				wordIndex.end = i;
+				wordIndex.text = text.slice(wordIndex.start, i);
 				wordIndexes.push({ ...wordIndex });
 				wordIndex = {};
 				if (findOne) {
@@ -113,26 +121,31 @@ export function getWordIndexesFromText(
 				inComment = false;
 			}
 		} else {
-			if (
-				!inWord &&
-				!inComment &&
-				(searchStr.length === 0 ||
-					(text.slice(i, i + searchStr.length) === searchStr &&
+			if (!inWord && !inComment) {
+				if (searchStrs.length === 0) {
+					// no seach, just separate words in text
+					inWord = true;
+					wordIndex.start = i;
+				} else {
+					// get the whole word in text and try to find in searchStrs
+					let nonWordIdx = i;
+					while (text[nonWordIdx] !== undefined && !isNonWordChar(text[nonWordIdx])) {
+						nonWordIdx++;
+					}
+					if (
 						(i === 0 || isNonWordChar(text[i - 1])) &&
-						(text[i + searchStr.length] === undefined ||
-							isNonWordChar(text[i + searchStr.length]))))
-			) {
-				// it's a word, only consider if not in a comment block
-				inWord = true;
-				wordIndex.start = i;
-				if (searchStr.length !== 0) {
-					i += searchStr.length - 1;
+						searchStrs.includes(text.slice(i, nonWordIdx))
+					) {
+						inWord = true;
+						wordIndex.start = i;
+						i = nonWordIdx - 1;
+					}
 				}
 			}
 		}
 	}
 	if (defined(wordIndex.start) && !defined(wordIndex.end)) {
-		wordIndexes.push({ ...wordIndex, end: text.length });
+		wordIndexes.push({ ...wordIndex, end: text.length, text: text.slice(wordIndex.start) });
 	}
 	return wordIndexes.filter((idx) => defined(idx));
 }

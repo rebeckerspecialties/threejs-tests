@@ -5,11 +5,13 @@ const ChangeTextContextComponent: React.FC<{
 	search: string;
 	children: React.ReactNode;
 }> = ({ search, children }) => {
-	const { setSelectedText } = useTextSelectionContext();
+	const { setTextSelections } = useTextSelectionContext();
 
 	useEffect(() => {
-		setSelectedText(search);
-	}, [search, setSelectedText]);
+		if (search.length !== 0) {
+			setTextSelections({ [search]: { hexColor: '#FF8800' } });
+		}
+	}, [search, setTextSelections]);
 
 	return <>{children}</>;
 };

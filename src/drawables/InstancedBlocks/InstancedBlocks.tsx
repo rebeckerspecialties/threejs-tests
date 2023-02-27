@@ -1,8 +1,8 @@
 import { HighlightedText } from '@/drawables/HighlightedText/HighlightedText';
 import { getBlockScaleFromText } from '@/drawables/utils/block';
-import { defaultBlockColor, findMatchBlockColor } from '@/drawables/utils/colors';
+import { defaultBlockColor, mixColors, textBgColorsEntity } from '@/drawables/utils/colors';
 import { defaultBoxGeometry, defaultBoxSize } from '@/drawables/utils/geometries';
-import { defaultBlockMaterial } from '@/drawables/utils/materials';
+import { defaultBasicMaterial } from '@/drawables/utils/materials';
 import { defined, getWordIndexesFromText } from '@/drawables/utils/utils';
 import { useTextSelectionContext } from '@/providers';
 import { useFrame } from '@react-three/fiber';
@@ -32,7 +32,7 @@ interface Props {
 const SCALE_MOD = 0.1;
 
 export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
-	const { selectedText } = useTextSelectionContext();
+	const { textSelections } = useTextSelectionContext();
 	const meshRef = useRef<InstancedMesh>(null);
 	const textPositionRefs: Array<RefObject<Group>> = blocks.map(() => createRef());
 
@@ -50,16 +50,18 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 				text = '',
 			} = blocks[idx];
 			let scaleMod = 0;
-			let blockColor: Color = defaultBlockColor;
+			let blockColor = defaultBlockColor;
 
-			if (
-				selectedText.length > 0 &&
-				getWordIndexesFromText(text, selectedText, {
-					findOne: true,
-				}).length > 0
-			) {
+			const selectedTexts = Object.keys(textSelections);
+			const wordIndexes = getWordIndexesFromText(text, selectedTexts);
+			if (selectedTexts.length !== 0 && wordIndexes.length !== 0) {
 				scaleMod = SCALE_MOD;
-				blockColor = findMatchBlockColor;
+				const colors = selectedTexts
+					.filter(
+						(selectedText) => wordIndexes.findIndex((wordI) => wordI.text === selectedText) !== -1,
+					)
+					.map((selectedText) => textBgColorsEntity[textSelections[selectedText].hexColor]);
+				blockColor = mixColors(colors.concat(new Color(0.5, 0.5, 0.5)));
 			}
 
 			// calculate dynamic block size from its text content
@@ -83,7 +85,7 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 		if (defined(meshRef.current.instanceColor)) {
 			meshRef.current.instanceColor.needsUpdate = true;
 		}
-	}, [blocks, selectedText]);
+	}, [blocks, textSelections]);
 
 	useFrame(() => {
 		for (let idx = 0; idx < blocks.length; idx++) {
@@ -105,9 +107,10 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 			text: string = '',
 			scale: { width: number; height: number; depth: number } = { width: 1, height: 1, depth: 1 },
 		) => {
+			const selectedTexts = Object.keys(textSelections);
 			if (
-				selectedText.length > 0 &&
-				getWordIndexesFromText(text, selectedText, {
+				selectedTexts.length > 0 &&
+				getWordIndexesFromText(text, selectedTexts, {
 					findOne: true,
 				}).length > 0
 			) {
@@ -116,14 +119,14 @@ export const InstancedBlocks: React.FC<Props> = ({ blocks }) => {
 				return (defaultBoxSize * scale.depth) / 2 + 0.011;
 			}
 		},
-		[selectedText],
+		[textSelections],
 	);
 
 	return (
 		<>
 			<instancedMesh
 				ref={meshRef}
-				args={[defaultBoxGeometry, defaultBlockMaterial, blocks.length]}
+				args={[defaultBoxGeometry, defaultBasicMaterial, blocks.length]}
 			/>
 			{blocks.map(
 				({ text = '', position = { x: 0, y: 0, z: 0 } }, blockIdx) =>

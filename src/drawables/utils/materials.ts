@@ -6,17 +6,15 @@
  */
 
 import { MeshBasicMaterial, MeshPhongMaterial } from 'three';
-import { defaultBlockColor } from './colors';
 
 export const perfTestPhongMaterial = new MeshPhongMaterial({ color: 'white' });
-
 export const defaultTextMaterial = new MeshPhongMaterial({ color: 0xffffff });
 
-export const defaultBlockMaterial = new MeshPhongMaterial({ color: 0x708090 });
-
 export const defaultGraphBlockMaterial = new MeshBasicMaterial({
-	color: defaultBlockColor,
-	opacity: 0.7,
+	color: '#AAAAAA',
+	opacity: 0.9,
 	transparent: true,
 	depthWrite: false,
 });
+export const defaultBlockMaterial = new MeshBasicMaterial({ color: 0x708090 });
+export const defaultBasicMaterial = new MeshBasicMaterial();

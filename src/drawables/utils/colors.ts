@@ -1,3 +1,4 @@
+import { TextSelections } from '@/providers/TextSelectionProvider/TextSelectionProvider';
 import { Color } from 'three';
 
 // TODO: modify these colors to use a proper theme
@@ -12,9 +13,19 @@ export const defaultThemeColor = {
 		// default: '#007ACC',
 		findMatch: '#a5bcd4',
 	},
+	findMatchBackgroundColors: ['#FF8800', '#8800FF', '#00FF88'],
 };
 export const defaultBlockColor = new Color(defaultThemeColor.blocks.default);
 export const findMatchBlockColor = new Color(defaultThemeColor.blocks.findMatch);
+export const defaultFindMatchTextBackground = new Color(
+	defaultThemeColor.editor.findMatchBackground,
+);
+
+// for text search
+export const textBgColorsEntity = defaultThemeColor.findMatchBackgroundColors.reduce((acc, val) => {
+	acc[val] = new Color(val);
+	return acc;
+}, {});
 
 function padZero(str: string, len: number = 2) {
 	const zeros = new Array(len).join('0');
@@ -55,4 +66,27 @@ export function invertColor(hexColor: string, returnBW: boolean = false): string
 	const blueHex = (255 - blueValue).toString(16);
 
 	return '#' + padZero(redHex) + padZero(greenHex) + padZero(blueHex);
+}
+
+export function mixColors(colors: Color[]) {
+	let rMixed = 0;
+	let gMixed = 0;
+	let bMixed = 0;
+
+	for (let i = 0; i < colors.length; i++) {
+		rMixed += colors[i].r;
+		gMixed += colors[i].g;
+		bMixed += colors[i].b;
+	}
+
+	return new Color(rMixed / colors.length, gMixed / colors.length, bMixed / colors.length);
+}
+
+export function getAvailableHighlightHexColor(textSelections: TextSelections): string {
+	const defaultFallbackColor = '#FFFFFF';
+	const hexColors = Object.values(textSelections).map(({ hexColor }) => hexColor);
+	const availableColor =
+		defaultThemeColor.findMatchBackgroundColors.find((color) => !hexColors.includes(color)) ??
+		defaultFallbackColor;
+	return availableColor;
 }
