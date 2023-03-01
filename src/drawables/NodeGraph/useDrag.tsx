@@ -263,14 +263,14 @@ function useDrag({ graph, nodeMesh, blocks }: Options) {
 						}
 
 						// if the controller is moving in the x axis
-						if (point.x !== controller.position?.x || id !== controller.selectedInstance) {
+						if (point.x !== controller.position?.x) {
 							const xDifference = point.x - controller.position.x;
 
 							xPosition += xDifference;
 						}
 
 						// if the controller is moving in the y axis
-						if (point.y !== controller.position?.y || id !== controller.selectedInstance) {
+						if (point.y !== controller.position?.y) {
 							const yDifference = point.y - controller.position.y;
 
 							yPosition += yDifference;
@@ -290,7 +290,7 @@ function useDrag({ graph, nodeMesh, blocks }: Options) {
 						const linkWithTheSameSource = links?.filter((link) => {
 							if (!defined(link.target)) return false;
 
-							if (typeof link.target === 'object') {
+							if (isNodeObject(link.target)) {
 								return link.target.id === blockSource;
 							} else {
 								return Number(link.target) === instanceId;
