@@ -21,15 +21,27 @@ export const Button: React.FC<ButtonProps> = ({ position, size, children, onClic
 	const [hover, setHover] = useState(false);
 
 	return (
-		<Interactive onSelect={onSelect} onHover={() => setHover(true)} onBlur={() => setHover(false)}>
+		<Interactive
+			onSelect={onSelect}
+			onHover={() => {
+				setHover(true);
+			}}
+			onBlur={() => {
+				setHover(false);
+			}}
+		>
 			<Box
 				color={0x123456}
 				scale={hover ? [1.25, 1.25, 1.25] : [1, 1, 1]}
 				size={size}
 				position={position}
 				onClick={onClick}
-				onPointerOver={() => setHover(true)}
-				onPointerOut={() => setHover(false)}
+				onPointerOver={() => {
+					setHover(true);
+				}}
+				onPointerOut={() => {
+					setHover(false);
+				}}
 			>
 				<Text
 					position={[0, 0, (size?.[2] ?? 0.1) / 2 + 0.01]}

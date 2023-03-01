@@ -168,9 +168,15 @@ export const HighlightedText = forwardRef<Group, Props>(function HighlightedText
 		}
 	};
 
-	const textOnMove: XRInteractionHandler = (e) => highlightWord(e, 'pre-select');
-	const textOnSelect: XRInteractionHandler = (e) => highlightWord(e, 'select');
-	const textOnBlur: XRInteractionHandler = () => setShowPreSelectMesh(false);
+	const textOnMove: XRInteractionHandler = (e) => {
+		highlightWord(e, 'pre-select');
+	};
+	const textOnSelect: XRInteractionHandler = (e) => {
+		highlightWord(e, 'select');
+	};
+	const textOnBlur: XRInteractionHandler = () => {
+		setShowPreSelectMesh(false);
+	};
 
 	return (
 		<group ref={groupRef} position={[position.x, position.y, position.z]}>

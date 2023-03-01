@@ -25,7 +25,7 @@ interface PlayerNavigationControllerState {
 
 export const PlayerNavigation: React.FC = () => {
 	const { player, session, controllers } = useXR();
-	const controllersStateRef = useRef<{ [id: number]: PlayerNavigationControllerState }>({});
+	const controllersStateRef = useRef<Record<number, PlayerNavigationControllerState>>({});
 
 	useFrame(() => {
 		if (!defined(session?.inputSources) || !defined(player?.position) || !defined(controllers)) {

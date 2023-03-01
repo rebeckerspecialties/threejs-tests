@@ -21,13 +21,15 @@ import { genTree } from './utils';
 
 export interface GraphBlock extends Block {
 	/**
-	 * source and target are used to create links between nodes
+	 * Source and target are used to create links between nodes.
+	 * Source is the id of the node
 	 */
 	source: number;
 	/**
-	 * source and target are used to create links between nodes
+	 * Source and target are used to create links between nodes.
+	 * Target is the id of the node that is the target of the link
 	 */
-	target: number;
+	target?: number;
 }
 
 interface Props {
@@ -78,6 +80,7 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 	const instancesBeingDragged = useDrag({
 		graph: graphRef,
 		nodeMesh: nodeMeshRef,
+		blocks,
 	});
 
 	const getZTranslation = useCallback(
@@ -115,7 +118,8 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 			graph.nodePositionUpdate((object: InstancedMesh, coords, node) => {
 				if (defined(node.id)) {
-					const instanceId = Number(node.id); // we assume that the node id is the same as the instance id
+					// get the instance id by the node id which is the source of the block
+					const instanceId = blocks.findIndex((block) => block.source === node.id);
 
 					// get matrix
 					object.getMatrixAt(instanceId, object.matrix);
@@ -127,11 +131,11 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 					object.setMatrixAt(instanceId, object.matrix);
 					object.instanceMatrix.needsUpdate = true;
 
-					if (defined(textPositionRefs[node.id]?.current)) {
+					if (defined(textPositionRefs[instanceId]?.current)) {
 						// update position of texts instances
-						const { text, scale = { width: 1, height: 1, depth: 1 } } = blocks[node.id];
-						textPositionRefs[node.id].current.position.set(coords.x, coords.y, coords.z);
-						textPositionRefs[node.id].current.translateZ(
+						const { text = '', scale = { width: 1, height: 1, depth: 1 } } = blocks[instanceId];
+						textPositionRefs[instanceId].current?.position.set(coords.x, coords.y, coords.z);
+						textPositionRefs[instanceId].current?.translateZ(
 							getZTranslation({ size: defaultGraphBlockDepth, text, scale }),
 						);
 					}
@@ -160,8 +164,11 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 		// set the node mesh as the object for each node
 		graph.nodeThreeObject((node) => {
+			// get the instance id by the node id which is the source of the block
+			const instanceId = blocks.findIndex((block) => block.source === node.id);
+
 			const { scale = { width: 0, height: 0, depth: 1 }, text = '' } =
-				blocks[!Number.isNaN(node.id) ? Number(node.id) : 0];
+				blocks[!Number.isNaN(instanceId) ? Number(instanceId) : 0];
 			const { scaleMod, blockColor } = getScaleAndColorMod(text, textSelections);
 
 			// calculate dynamic block size from its text content
@@ -180,11 +187,11 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 			if (node?.id !== undefined && defined(nodeMeshRef.current)) {
 				// set matrix of the instanced mesh to the node's matrix
-				nodeMeshRef.current?.setMatrixAt(Number(node.id), object3D.matrix);
+				nodeMeshRef.current?.setMatrixAt(Number(instanceId), object3D.matrix);
 				nodeMeshRef.current.instanceMatrix.needsUpdate = true;
 
 				// set color of the instanced mesh to the node's color
-				nodeMeshRef.current?.setColorAt(Number(node.id), blockColor);
+				nodeMeshRef.current?.setColorAt(Number(instanceId), blockColor);
 				if (defined(nodeMeshRef.current.instanceColor)) {
 					nodeMeshRef.current.instanceColor.needsUpdate = true;
 				}

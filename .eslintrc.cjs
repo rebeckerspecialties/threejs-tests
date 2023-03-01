@@ -32,6 +32,7 @@ module.exports = {
 		'import/namespace': 'off',
 		'import/default': 'off',
 		'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+		'@typescript-eslint/consistent-type-imports': 'off',
 		'react/no-unknown-property': [
 			'error',
 			{ ignore: ['position', 'args', 'position', 'rotation'] },

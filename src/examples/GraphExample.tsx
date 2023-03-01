@@ -6,7 +6,6 @@ export const GraphExample: React.FC = () => {
 		{
 			text: 'PRG000_D82B:\n\tRTS\n\nObject_HitTest:\n\tLDA #$01\n\tJMP PRG000_D83D',
 			source: 0,
-			target: 5,
 		},
 		{
 			text: 'Object_HitTestRespond:\n\tLDA #$00 W',
@@ -28,9 +27,8 @@ export const GraphExample: React.FC = () => {
 			source: 4,
 			target: 0,
 		},
-
 		{
-			text: 'Test 2 5',
+			text: 'Test 2 5 TEST',
 			source: 5,
 			target: 0,
 		},
