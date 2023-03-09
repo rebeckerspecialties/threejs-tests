@@ -18,5 +18,5 @@ export const router = createBrowserRouter(
 			element: <Login />,
 		},
 	],
-	{ basename: '/webapp' }, // GH project pages - this is the repo name
+	{ basename: '/threejs-tests' }, // GH project pages - this is the repo name
 );
