@@ -1,0 +1,19 @@
+.gh-login-button {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+
+	padding: 10px;
+	border-radius: 5px;
+	border: 1px solid white;
+	background-color: transparent;
+	color: #fff;
+	width: 300px;
+	cursor: pointer;
+	transition: background-color 0.2s ease-in-out;
+}
+
+.gh-login-button:hover {
+	background-color: #ffffff11;
+}

@@ -1,8 +1,6 @@
 import React, { createContext, Dispatch, SetStateAction, useContext, useState } from 'react';
 
-export interface TextSelections {
-	[text: string]: { hexColor: string };
-}
+export type TextSelections = Record<string, { hexColor: string }>;
 
 export interface TextSelectionContextProps {
 	textSelections: TextSelections;

@@ -213,7 +213,7 @@ function useDrag({ graph, nodeMesh, blocks }: Options) {
 					defined(controller.controller)
 				) {
 					// keep the graph running while the user is dragging an instance
-					graph.current?.d3AlphaTarget(0).resetCountdown();
+					graph.current?.resetCountdown();
 					const { controller: controllerRef, point, selectedInstance: instanceId } = controller;
 					const { children } = controllerRef;
 					const controllerPosition = children[0].position;
@@ -278,44 +278,51 @@ function useDrag({ graph, nodeMesh, blocks }: Options) {
 
 						if (defined(nodes) && defined(nodes[id])) {
 							const node = nodes[id];
-
-							node.x = xPosition;
-							node.y = yPosition;
-							node.z = zPosition;
+							node.fx = xPosition;
+							node.fy = yPosition;
+							node.fz = zPosition;
 						}
 					};
 
 					if (defined(controller.squeezeButtonPressed) && controller.squeezeButtonPressed) {
-						// get all nodes with the same source as the block being dragged
-						const linkWithTheSameSource = links?.filter((link) => {
-							if (!defined(link.target)) return false;
+						function getAllChildren(nodeId: number) {
+							const linksWithSameSource = links?.filter((link) => {
+								if (!defined(link.target)) return false;
 
-							if (isNodeObject(link.target)) {
-								return link.target.id === blockSource;
-							} else {
-								return Number(link.target) === instanceId;
-							}
-						});
-
-						// search for the instance id based on the source of the links
-						const instanceIds = linkWithTheSameSource
-							?.map((link) => {
-								if (isNodeObject(link.source)) {
-									const node = nodes?.find(
-										(node) => node.id === Number((link.source as NodeObject).id),
-									);
-									return node?.id;
+								if (isNodeObject(link.target)) {
+									return link.target.id === nodeId;
+								} else {
+									return Number(link.target) === nodeId;
 								}
+							});
 
-								return link.source;
-							})
-							.filter((id) => defined(id)) as Array<number | string>;
+							const childIds = linksWithSameSource
+								?.map((link) => {
+									if (isNodeObject(link.source)) {
+										const node = nodes?.find(
+											(node) => node.id === Number((link.source as NodeObject).id),
+										);
+										return node?.id;
+									}
 
-						// We add the instance id of the block being dragged to the array
-						instanceIds?.unshift(instanceId);
+									return link.source;
+								})
+								.filter((id) => defined(id)) as Array<number | string>;
 
-						if (defined(instanceIds) && instanceIds.length !== 0) {
-							instanceIds.forEach((id) => {
+							let allChildren = childIds;
+							for (const childId of childIds) {
+								const grandChildren = getAllChildren(Number(childId));
+								allChildren = allChildren.concat(grandChildren);
+							}
+
+							return allChildren;
+						}
+
+						// get all children of the block being dragged
+						const instancesIds = [blockSource, ...getAllChildren(blockSource)];
+
+						if (defined(instancesIds) && instancesIds.length !== 0) {
+							instancesIds.forEach((id) => {
 								updatePosition(Number(id));
 							});
 						}

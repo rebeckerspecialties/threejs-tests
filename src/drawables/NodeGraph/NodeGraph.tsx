@@ -118,6 +118,11 @@ export const NodeGraph: React.FC<Props> = ({ blocks }) => {
 
 			graph.nodePositionUpdate((object: InstancedMesh, coords, node) => {
 				if (defined(node.id)) {
+					// update node fixed positions
+					node.fx = coords.x;
+					node.fy = coords.y;
+					node.fz = coords.z;
+
 					// get the instance id by the node id which is the source of the block
 					const instanceId = blocks.findIndex((block) => block.source === node.id);
 

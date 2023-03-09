@@ -35,7 +35,7 @@ export default defineConfig({
 			'./src/test/setupFiles/setupAndCleanupMocks.ts',
 		],
 	},
-	base: '',
+	base: '/webapp', // GH project pages - this is the repo name
 	resolve: {
 		alias: {
 			'@': resolve(__dirname, 'src'),
